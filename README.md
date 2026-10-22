@@ -1,42 +1,55 @@
-# Jungle Marketplace — desenvolvimento
+# Jungle Marketplace
 
-Implementação iniciada em 22/10/2026. Esta é uma base funcional, ainda não a entrega completa do desafio.
+Solução em desenvolvimento para o [frontend challenge da Jungle](https://github.com/junglegaming/frontend-challenge). Código salvo em repositório privado: https://github.com/LucasRL23/jungle-marketplace.
 
 ## Executar
 
-Node 22+ e pnpm 11+. `pnpm install`, `pnpm dev`, `pnpm build`, `pnpm preview`, `pnpm lint`, `pnpm exec playwright test`.
+Node 22.12+ e pnpm 11.25. `pnpm install`, `pnpm dev`, `pnpm build`, `pnpm preview`, `pnpm typecheck`, `pnpm lint`, `pnpm test:e2e`. Antes da primeira execução dos testes: `pnpm exec playwright install chromium`. Relatório: `pnpm test:report`. Traces são preservados em caso de falha.
 
-Os mocks MSW estão habilitados por padrão inclusive em produção. `VITE_MOCKS=false` desativa os mocks para uma futura API real. Não há API real configurada.
+Os mocks MSW estão habilitados por padrão inclusive no build de demonstração. `VITE_MOCKS=false` desativa a simulação; não há backend real configurado. Nenhuma carteira, cobrança ou transação é real.
 
-## Implementado
+## Credenciais fictícias
 
-- React/TypeScript/Vite, Tailwind e Button no padrão shadcn/ui.
-- TanStack Router: catálogo, detalhe, fallback 404 e parâmetros de busca tipados.
-- TanStack Query e Axios com cancelamento via AbortSignal.
-- MSW: catálogo de 24 itens, detalhe, filtros combinados, ordenação exata em wei e paginação.
-- Skeletons, resultado vazio, erro com nova tentativa e layout adaptável.
-- Playwright: testes do catálogo em Chromium desktop/mobile.
+| E-mail            | Senha      |
+| ----------------- | ---------- |
+| alex@example.test | Jungle123! |
+| luna@example.test | Jungle123! |
 
-## Cenários atuais
+Cada conta inicial possui uma carteira Ethereum simulada. Novas contas precisam cadastrar uma carteira em `/wallets`. Use um endereço fictício com `0x` e 40 caracteres hexadecimais. Não use dados ou senhas reais.
 
-No console do navegador: `localStorage.setItem('jungle-scenario', 'slow')`, `'error'` ou `'empty'`. Recarregue a página. Reset: `localStorage.removeItem('jungle-scenario')`.
+## Implementado nesta etapa
 
-## Antes de entregar
+- Catálogo de 24 NFTs, filtros combinados, busca, ordenação e paginação na URL.
+- Detalhe direto, edição standard/limited e controle de quantidade/estoque.
+- Cadastro/login/logout, recuperação e expiração da sessão, rotas privadas e isolamento entre usuários.
+- Carrinho persistente, merge dos itens do visitante no login e cupons (`JUNGLE10` dá 10%; `EXPIRED` é inválido).
+- Cotação pelo servidor simulado, dinheiro em wei/strings ETH, revisão e revalidação no checkout.
+- Carteiras principal/secundária, edição, rede e conexão/recusa/desconexão simuladas.
+- Pedido idempotente, estados pendente/confirmado/recusado e recibo por snapshot.
+- Recuperação da mesma tentativa após timeout ou refresh; itens preservados na recusa e abatidos apenas após confirmação.
+- Skeletons, falhas, resultado vazio e layout responsivo.
 
-- [ ] Conferir e reproduzir os frames/assets do Figma: https://www.figma.com/design/Ff0SksUi7UFtPWUO8kyNtw/Frontend-Challenge?node-id=0-1
-- [ ] Sessão, dois usuários, cadastro/login/logout, expiração e proteção de rotas.
-- [ ] Favoritos otimistas com rollback e isolamento de cache.
-- [ ] Carrinho persistente e merge do visitante; quantidades, edições e cupons.
-- [ ] Cotação, checkout, pedidos idempotentes e recibo imutável.
-- [ ] Perfil, avatar, senha e carteiras.
-- [ ] Eventos reais no socket.io-client via binding MSW; versões e reconexão.
-- [ ] Completar cenários de falha e testes E2E do enunciado.
-- [ ] Baselines de regressão visual e auditorias Lighthouse.
-- [ ] Repositório remoto e deploy público com fallback SPA.
+## Cenários reproduzíveis
 
-A instalação das dependências de Socket.IO e Lighthouse não significa que esses requisitos já estão implementados.
+No console do navegador: `localStorage.setItem('jungle-scenario', 'slow')`. Alternativas: `success`, `empty` (catálogo vazio), `error` (catálogo 503), `server-error` (API 503), `offline` (erro de transporte), `expired` (sessão inválida), `declined` (pagamento recusado), `pending` (pedido pendente por 30s), `timeout` (resposta de criação do pedido demora 11s, além do timeout do Axios de 10s).
 
-## Validação desta etapa
+Para `declined`, `pending` e `timeout`, selecione o cenário antes de confirmar a compra. Em timeout, aguarde o erro e use **Recuperar meu pedido**; atualizar a página também mantém a tentativa. Ela recupera a mesma chave de idempotência.
 
-Build de produção e lint executados com sucesso. Seis testes Playwright passaram em Chromium (desktop e mobile), cobrindo apenas o catálogo e detalhe descritos acima. O restante do desafio permanece pendente.
+Reset do cenário: `localStorage.removeItem('jungle-scenario')`. Reset integral: no console, `localStorage.clear(); sessionStorage.clear(); location.reload()`. Isso apaga somente dados locais desta origem e recria as fixtures. Cada teste Playwright inicia num contexto isolado.
 
+## Pendências do desafio
+
+- [ ] Fidelidade aos frames, tipografia e assets reais do Figma.
+- [ ] Favoritos otimistas com rollback.
+- [ ] Perfil, avatar e alteração de senha.
+- [ ] Eventos pelo socket.io-client + binding MSW, versionamento, reconexão e alterações de preço/estoque durante o checkout.
+- [ ] Cenários determinísticos de respostas fora de ordem, eventos duplicados/antigos e perda de conexão.
+- [ ] Completar os testes E2E exigidos e baselines visuais versionadas.
+- [ ] Auditar Lighthouse (3 medições por página/perfil e medianas).
+- [ ] Deploy público e verificação de rotas diretas em produção.
+
+A instalação das dependências Socket.IO e Lighthouse não significa que essas integrações estejam concluídas. Esta etapa ainda não é a entrega final.
+
+## Validação do checkpoint
+
+Em 22/10/2026: build de produção e lint passaram; **18 testes Playwright passaram** (9 cenários em Chromium desktop e mobile). A suíte cobre catálogo, compra confirmada e recibo após refresh, cupom, recusa, timeout idempotente, cadastro, carteiras, logout/troca de usuário, isolamento de recibos, expiração no checkout e recuperação de falha de rede em rota privada. Isso não representa cobertura completa do enunciado; pendências estão listadas acima.

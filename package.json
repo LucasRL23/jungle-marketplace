@@ -11,7 +11,9 @@
     "typecheck": "tsc -b --pretty false",
     "test:e2e": "playwright test",
     "test:report": "playwright show-report",
-    "dev:mocks": "vite"
+    "dev:mocks": "vite",
+    "format": "prettier --write src tests *.ts *.json *.md",
+    "format:check": "prettier --check src tests *.ts *.json *.md"
   },
   "dependencies": {
     "@mswjs/socket.io-binding": "^0.2.0",
@@ -38,6 +40,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "lighthouse": "^13.5.0",
     "oxlint": "^1.88.0",
+    "prettier": "^3.9.10",
     "typescript": "~6.0.3",
     "vite": "^8.3.4"
   },

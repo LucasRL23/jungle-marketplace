@@ -1,1 +1,8 @@
-{"rewrites":[{"source":"/((?!api/|artwork/|assets/|mockServiceWorker.js|favicon.svg).*)","destination":"/index.html"}]}
+{
+  "rewrites": [
+    {
+      "source": "/((?!api/|artwork/|assets/|mockServiceWorker.js|favicon.svg).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
