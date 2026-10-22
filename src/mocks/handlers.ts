@@ -1,5 +1,12 @@
 import { http, HttpResponse, delay } from "msw";
-import type { CartItem, LoginResult, Order, Session, Wallet } from "../domain";
+import type {
+  CartItem,
+  LoginResult,
+  Order,
+  Session,
+  Wallet,
+  Profile,
+} from "../domain";
 import { wei } from "../lib/money";
 import {
   ApiError,
@@ -15,15 +22,13 @@ import {
   publicUser,
   quoteCart,
   scenario,
+  scheduleOrder,
   settleOrder,
   storedCart,
   viewCart,
 } from "./store";
 
-export const mockEvents = new EventTarget();
-export function publish(type: string, resource: unknown) {
-  mockEvents.dispatchEvent(new CustomEvent(type, { detail: resource }));
-}
+import { mockEvents, publish } from "./events";
 const text = (b: Record<string, unknown>, key: string) =>
   typeof b[key] === "string" ? (b[key] as string).trim() : "";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -36,14 +41,24 @@ async function serve(request: Request) {
   const url = new URL(request.url),
     path = url.pathname.replace("/api", ""),
     method = request.method;
-  await delay(scenario() === "slow" ? 2500 : 100);
+  await delay(
+    scenario() === "slow" ? 2500 : scenario() === "favorite-error" ? 700 : 100,
+  );
   if (scenario() === "offline") return HttpResponse.error();
   if (scenario() === "server-error")
     fail(503, "Serviço indisponível. Tente novamente.");
   const db = await getDb();
   // Reconcile elapsed pending orders even if the browser was closed.
-  for (const order of db.orders)
-    if (settleOrder(db, order)) publish("order.updated", publicOrder(order));
+  for (const order of db.orders) {
+    if (settleOrder(db, order)) {
+      publish("order.updated", publicOrder(order));
+      for (const item of order.quote.items)
+        publish(
+          "nft.updated",
+          db.inventory.find((n) => n.id === item.nftId)!,
+        );
+    }
+  }
   const body = ["POST", "PUT", "PATCH"].includes(method)
     ? ((await request.json()) as Record<string, unknown>)
     : {};
@@ -58,7 +73,7 @@ async function serve(request: Request) {
   }
   if ((path === "/login" || path === "/register") && method === "POST") {
     const email = text(body, "email").toLowerCase(),
-      password = text(body, "password"),
+      password = typeof body.password === "string" ? body.password : "",
       name = text(body, "name");
     if (!emailPattern.test(email) || password.length < 8)
       fail(
@@ -80,6 +95,9 @@ async function serve(request: Request) {
         salt,
         passwordHash: hash,
         wallets: [],
+        avatar: "",
+        bio: "",
+        favorites: [],
       };
       db.users.push(user);
     } else if (
@@ -133,6 +151,176 @@ async function serve(request: Request) {
     if (token) delete db.sessions[token];
     persist(db);
     return success({ ok: true });
+  }
+  if (path === "/favorites" || path.startsWith("/favorites/")) {
+    const user = authenticate(db, request)!;
+    if (method === "GET" && path === "/favorites")
+      return success(user.favorites);
+    const id = decodeURIComponent(path.slice("/favorites/".length));
+    if (!db.inventory.some((n) => n.id === id))
+      fail(404, "NFT não encontrado.");
+    if (scenario() === "favorite-error")
+      fail(
+        503,
+        "Não foi possível salvar o favorito. Seu estado anterior foi restaurado.",
+      );
+    if (method === "PUT")
+      user.favorites = [...new Set([...user.favorites, id])];
+    else if (method === "DELETE")
+      user.favorites = user.favorites.filter((i) => i !== id);
+    else fail(405, "Método não permitido.");
+    persist(db);
+    return success(user.favorites);
+  }
+  if (path === "/profile" || path === "/profile/avatar") {
+    const user = authenticate(db, request)!;
+    const view = (): Profile => ({
+      ...publicUser(user),
+      avatar: user.avatar,
+      bio: user.bio,
+    });
+    if (method === "GET") return success(view());
+    if (method === "PATCH" && path === "/profile/avatar") {
+      const avatar = text(body, "avatar");
+      if (
+        avatar.length > 350000 ||
+        (avatar &&
+          !/^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(avatar))
+      )
+        fail(422, "Use uma imagem PNG, JPEG ou WebP de até 256 KB.");
+      if (avatar) {
+        let raw = "";
+        try {
+          raw = atob(avatar.split(",")[1]);
+        } catch {
+          fail(422, "O arquivo de imagem é inválido.");
+        }
+        const valid =
+          raw.startsWith("\x89PNG\r\n\x1a\n") ||
+          raw.startsWith("\xff\xd8\xff") ||
+          (raw.startsWith("RIFF") && raw.slice(8, 12) === "WEBP");
+        if (!valid) fail(422, "O arquivo de imagem é inválido.");
+      }
+      user.avatar = avatar;
+    } else if (method === "PATCH") {
+      const name = text(body, "name"),
+        email = text(body, "email").toLowerCase(),
+        bio = text(body, "bio");
+      if (
+        name.length < 2 ||
+        name.length > 80 ||
+        !emailPattern.test(email) ||
+        bio.length > 500
+      )
+        fail(
+          422,
+          "Confira nome, e-mail e biografia (máximo de 500 caracteres).",
+        );
+      if (db.users.some((u) => u.id !== user.id && u.email === email))
+        fail(409, "Já existe uma conta com este e-mail.");
+      user.name = name;
+      user.email = email;
+      user.bio = bio;
+    } else fail(405, "Método não permitido.");
+    persist(db);
+    return success(view());
+  }
+  if (path === "/password" && method === "POST") {
+    const user = authenticate(db, request)!,
+      token = request.headers.get("authorization")!.slice(7);
+    const current =
+        typeof body.currentPassword === "string" ? body.currentPassword : "",
+      next = typeof body.newPassword === "string" ? body.newPassword : "";
+    if ((await passwordHash(current, user.salt)) !== user.passwordHash)
+      fail(422, "A senha atual está incorreta.");
+    if (
+      next.length < 8 ||
+      !/[a-zA-Z]/.test(next) ||
+      !/\d/.test(next) ||
+      next === current
+    )
+      fail(
+        422,
+        "A nova senha precisa de 8 caracteres, letras e números, e deve ser diferente da atual.",
+      );
+    const salt = crypto.randomUUID(),
+      hash = await passwordHash(next, salt);
+    authenticate(db, request); // The session may expire during hashing.
+    user.salt = salt;
+    user.passwordHash = hash;
+    for (const [key, session] of Object.entries(db.sessions))
+      if (session.userId === user.id && key !== token) delete db.sessions[key];
+    persist(db);
+    return success({ ok: true });
+  }
+  if (path === "/demo/nft" && method === "POST") {
+    const nft =
+      db.inventory.find((n) => n.id === text(body, "id")) ||
+      fail(404, "NFT não encontrado.");
+    const delivery = text(body, "delivery");
+    if (delivery !== "stale") {
+      const price = text(body, "price") || nft.price,
+        stock = body.stock === undefined ? nft.stock : Number(body.stock);
+      if (
+        !/^\d+(\.\d{1,18})?$/.test(price) ||
+        wei(price) <= 0n ||
+        !Number.isInteger(stock) ||
+        stock < 0
+      )
+        fail(422, "Preço ou estoque inválido.");
+      const reserved = db.orders
+        .filter((o) => o.status === "pending")
+        .flatMap((o) => o.quote.items)
+        .filter((i) => i.nftId === nft.id)
+        .reduce((sum, i) => sum + i.quantity, 0);
+      if (stock < reserved)
+        fail(409, "Este estoque já está reservado por um pedido pendente.");
+      nft.price = price;
+      nft.stock = stock;
+      nft.version++;
+      for (const cart of Object.values(db.carts))
+        if (cart.items.some((i) => i.nftId === nft.id)) cart.version++;
+      persist(db);
+    }
+    publish("nft.updated", nft, delivery);
+    return success(nft);
+  }
+  if (path === "/demo/disconnect" && method === "POST") {
+    mockEvents.dispatchEvent(new CustomEvent("demo.disconnect"));
+    return success({ ok: true });
+  }
+  if (path === "/demo/advance-orders" && method === "POST") {
+    for (const order of db.orders)
+      if (order.status === "pending") {
+        order.settleAt = Date.now();
+        if (settleOrder(db, order)) {
+          publish("order.updated", publicOrder(order));
+          for (const item of order.quote.items)
+            publish(
+              "nft.updated",
+              db.inventory.find((n) => n.id === item.nftId)!,
+            );
+        }
+      }
+    return success({ ok: true });
+  }
+  if (path === "/demo/order" && method === "POST") {
+    const user = authenticate(db, request)!;
+    const order =
+      db.orders.find(
+        (o) => o.id === text(body, "id") && o.userId === user.id,
+      ) || fail(404, "Pedido não encontrado.");
+    if (body.delivery === "settle" && order.status === "pending") {
+      order.settleAt = Date.now();
+      settleOrder(db, order);
+      for (const item of order.quote.items)
+        publish(
+          "nft.updated",
+          db.inventory.find((n) => n.id === item.nftId)!,
+        );
+    }
+    publish("order.updated", publicOrder(order), text(body, "delivery"));
+    return success(publicOrder(order));
   }
   if (path === "/nfts" && method === "GET") {
     if (scenario() === "error") fail(503, "O catálogo está indisponível.");
@@ -306,19 +494,7 @@ async function serve(request: Request) {
     };
     db.orders.push(order);
     persist(db);
-    setTimeout(
-      () => {
-        if (settleOrder(db, order)) {
-          publish("order.updated", publicOrder(order));
-          for (const item of order.quote.items)
-            publish(
-              "nft.updated",
-              db.inventory.find((n) => n.id === item.nftId),
-            );
-        }
-      },
-      Math.max(0, order.settleAt - Date.now()),
-    );
+    scheduleOrder(db, order);
     if (scenario() === "timeout") {
       await delay(11000);
       return HttpResponse.error();

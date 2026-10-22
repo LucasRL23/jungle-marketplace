@@ -8,7 +8,10 @@
 - `mocks/store.ts`: estado persistente da simulação e regras de cotação, reserva e liquidação.
 - `mocks/handlers.ts`: API REST MSW. Componentes e hooks não fornecem respostas fictícias.
 - `features/hooks.ts`: sessão, carrinho e carteiras via Query.
-- `features/commerce.tsx`: primeiro fluxo de conta e compra.
+- `features/commerce.tsx`: fluxo de conta e compra.
+- `features/collector.tsx`: favoritos, perfil, avatar e senha.
+- `features/realtime.tsx`: cliente Socket.IO e reconciliação do cache.
+- `mocks/socket.ts` e `mocks/events.ts`: transporte MSW e emissão de eventos da simulação.
 - `App.tsx`: catálogo, detalhe e TanStack Router; rotas privadas usam beforeLoad.
 - `components/ui`: componente Button local no padrão shadcn/ui (Radix Slot/cva).
 
@@ -47,7 +50,7 @@ Carrinho do visitante é separado por X-Visitor. Login mescla e limita quantidad
 
 Chave de idempotência e corpo são preservados no sessionStorage, por usuário, antes do envio. A API registra a tentativa atomicamente antes de simular timeout: mesma chave e conteúdo recuperam o mesmo pedido, conteúdo diferente gera 409. Um bloqueio síncrono na UI cobre cliques durante a revalidação assíncrona. Pedidos pendentes reservam estoque; a liquidação ocorre uma única vez, por versão/status terminal. Recusa libera a reserva sem remover itens. Confirmação abate apenas quantidades compradas e mantém o recibo por snapshot.
 
-Após refresh, os handlers conciliam pedidos cujo prazo de liquidação já passou. Nesta etapa, a consulta periódica de 1.5s recupera pedidos pendentes; a integração Socket.IO ainda será implementada.
+Após refresh, o banco simulado retoma os temporizadores persistidos dos pedidos pendentes. Os handlers também conciliam liquidações já vencidas. Eventos Socket.IO atualizam o pedido; uma consulta a cada 15s serve de recuperação adicional. Reconexão invalida os recursos ativos e consulta seu estado por REST.
 
 ## Cache e retries
 
@@ -55,4 +58,24 @@ Catálogo: chave inclui todos os parâmetros, staleTime 30s; detalhe inclui id. 
 
 ## Desvios atuais
 
-Layout preliminar ainda não validado contra os frames do Figma. Seis SVGs abstratos locais são placeholders de desenvolvimento; tipografia usa fonte de sistema. Perfil, favoritos, tempo real, regressão visual e Lighthouse permanecem pendentes. Nenhuma pontuação ou equivalência visual é alegada. Link de explorador não existe porque as referências são simuladas.
+Layout preliminar ainda não validado contra os frames do Figma. Seis SVGs abstratos locais são placeholders de desenvolvimento; tipografia usa fonte de sistema. Regressão visual e Lighthouse permanecem pendentes. Nenhuma pontuação ou equivalência visual é alegada. Link de explorador não existe porque as referências são simuladas.
+
+## Perfil e favoritos
+
+GET /api/favorites → string[] de ids; PUT/DELETE /api/favorites/:id → lista atualizada. Inclusão/remoção são idempotentes. A UI cancela queries concorrentes, guarda um snapshot, aplica atualização otimista e restaura o snapshot em falha. Mutations que terminam após troca de token não repovoam o cache privado anterior. GET/PATCH /api/profile → {id,name,email,bio,avatar}; PATCH /api/profile/avatar recebe {avatar:dataURL|string-vazia}. A interface limita arquivos a 256 KB (PNG/JPEG/WebP), valida decodificação e só exibe como salvo após resposta. O servidor valida formato e assinatura. POST /api/password recebe {currentPassword,newPassword}, verifica o hash atual e invalida as outras sessões dessa conta após confirmar a alteração. E-mail em conflito retorna 409. O token atual permanece válido.
+
+## Transporte e contratos Socket.IO
+
+`socket.io-client` usa WebSocket no mesmo origin, path `/socket.io`. MSW intercepta a conexão e `@mswjs/socket.io-binding` codifica/decodifica Engine.IO e Socket.IO. O aplicativo é importado depois de `worker.start()`: Engine.IO captura o construtor WebSocket ao importar. Na versão MSW 2.10.2, o matcher normaliza `/socket.io/` para `/`; o handler aponta para a raiz do origin e verifica o path físico para preservar o WebSocket de HMR do Vite. Não há servidor WebSocket externo no deploy de demonstração.
+
+- `subscribe` cliente → {token:string|null}; o mock autentica a sessão atual.
+- `session.ready` servidor → {connectionId:string}; indica que a subscription foi autenticada (ou visitante).
+- `nft.updated` servidor → {id,resourceId,version,data:Nft}.
+- `order.updated` servidor → {id,resourceId,version,data:Order}, somente para o dono autenticado.
+- `session.expired` servidor → revalidação do cliente por GET /api/session; 401 encerra a sessão.
+
+Identidade de evento é UUID, recurso tem id estável e versão inteira crescente. O cliente compara versões recebidas com catálogo, detalhe e carrinho em cache, descarta ids repetidos e versões antigas e cancela consultas anteriores antes de sincronizar. Pedidos terminais nunca voltam a pendente. Mudanças de preço/estoque incrementam versões dos carrinhos afetados; as cotações também incluem a versão de inventário por item. A revisão antiga é desabilitada e o servidor revalida ao criar o pedido.
+
+O mock mantém heartbeat Engine.IO a cada 20s. Ao reconectar, o cliente reautentica e invalida queries ativas de inventário/carrinho/cotações e pedidos do usuário atual. Listeners, socket, heartbeat e subscriptions são liberados no cleanup. Cada callback verifica o token capturado antes de escrever no cache; logout/401 também encerram o socket imediatamente. Eventos privados validam a sessão novamente antes de serem enviados.
+
+Limitações: a simulação roda no contexto de cada página, com localStorage para refresh; não representa um backend compartilhado entre dispositivos. O binding é usado somente no namespace padrão, transporte WebSocket e eventos JSON; rooms, polling HTTP e mensagens binárias não são exercitados. `/api/demo/*` é uma API local de controle de fixtures, disponível somente com os mocks: ela não deve ser exposta por um backend real. Os testes acionam esses handlers e observam a UI, incluindo um pedido confirmado por evento sem uma nova consulta de polling.

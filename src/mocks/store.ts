@@ -1,5 +1,14 @@
-import type { CartItem, Nft, Order, Quote, User, Wallet } from "../domain";
+import type {
+  CartItem,
+  Nft,
+  Order,
+  Quote,
+  User,
+  Profile,
+  Wallet,
+} from "../domain";
 import { eth, wei } from "../lib/money";
+import { publish } from "./events";
 
 export class ApiError extends Error {
   status: number;
@@ -11,10 +20,11 @@ export class ApiError extends Error {
 export function fail(status: number, message: string): never {
   throw new ApiError(status, message);
 }
-interface StoredUser extends User {
+interface StoredUser extends Profile {
   salt: string;
   passwordHash: string;
   wallets: Wallet[];
+  favorites: string[];
 }
 interface StoredCart {
   items: CartItem[];
@@ -101,7 +111,15 @@ export async function getDb(): Promise<Database> {
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
-        return JSON.parse(saved) as Database;
+        const db = JSON.parse(saved) as Database;
+        for (const user of db.users) {
+          user.avatar ??= "";
+          user.bio ??= "";
+          user.favorites ??= [];
+        }
+        persist(db);
+        for (const order of db.orders) scheduleOrder(db, order);
+        return db;
       } catch {
         localStorage.removeItem(storageKey);
       }
@@ -112,6 +130,9 @@ export async function getDb(): Promise<Database> {
       users.push({
         id: `user-${i + 1}`,
         name,
+        avatar: "",
+        bio: "",
+        favorites: [],
         email: i === 0 ? "alex@example.test" : "luna@example.test",
         salt,
         passwordHash: await passwordHash("Jungle123!", salt),
@@ -217,6 +238,7 @@ export function quoteCart(db: Database, owner: string): Quote {
       name: nft.name,
       unitPrice: unitPrice(nft, item.edition),
       image: nft.image,
+      inventoryVersion: nft.version,
     };
   });
   const subtotal = items.reduce(
@@ -264,6 +286,10 @@ export function settleOrder(db: Database, order: StoredOrder) {
       const nft = db.inventory.find((n) => n.id === item.nftId)!;
       nft.stock -= item.quantity;
       nft.version++;
+      for (const other of Object.values(db.carts)) {
+        if (other !== cart && other.items.some((i) => i.nftId === nft.id))
+          other.version++;
+      }
       const line = cart.items.find(
         (i) => i.nftId === item.nftId && i.edition === item.edition,
       );
@@ -276,6 +302,26 @@ export function settleOrder(db: Database, order: StoredOrder) {
       "O pagamento foi recusado na simulação. Nenhum item foi cobrado.";
   persist(db);
   return true;
+}
+const orderTimers = new Map<string, ReturnType<typeof setTimeout>>();
+export function scheduleOrder(db: Database, order: StoredOrder) {
+  if (order.status !== "pending" || orderTimers.has(order.id)) return;
+  orderTimers.set(
+    order.id,
+    setTimeout(
+      () => {
+        orderTimers.delete(order.id);
+        if (!settleOrder(db, order)) return;
+        publish("order.updated", publicOrder(order));
+        for (const item of order.quote.items)
+          publish(
+            "nft.updated",
+            db.inventory.find((n) => n.id === item.nftId)!,
+          );
+      },
+      Math.max(0, order.settleAt - Date.now()),
+    ),
+  );
 }
 export const publicOrder = (order: StoredOrder): Order => {
   const {

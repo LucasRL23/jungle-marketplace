@@ -20,10 +20,12 @@ localStorage.setItem("jungle-visitor", visitor);
 api.interceptors.request.use((config) => {
   config.headers.set("X-Visitor", visitor);
   const token = localStorage.getItem("jungle-token");
-  if (token) config.headers.set("Authorization", `Bearer ${token}`);
+  if (token && !config.headers.has("Authorization"))
+    config.headers.set("Authorization", `Bearer ${token}`);
   return config;
 });
 export async function clearPrivateData() {
+  window.dispatchEvent(new Event("jungle-session-reset"));
   await queryClient.cancelQueries({
     predicate: (q) => q.queryKey[0] === "private",
   });

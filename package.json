@@ -9,7 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
-    "test:e2e": "playwright test",
+    "test:e2e": "pnpm build && playwright test",
     "test:report": "playwright show-report",
     "dev:mocks": "vite",
     "format": "prettier --write src tests *.ts *.json *.md",

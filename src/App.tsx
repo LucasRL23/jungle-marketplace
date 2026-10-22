@@ -28,6 +28,9 @@ import {
   WalletsPage,
 } from "./features/commerce";
 
+import { Realtime } from "./features/realtime";
+import { FavoriteButton } from "./features/collector";
+
 function Layout() {
   return (
     <>
@@ -54,6 +57,7 @@ function Layout() {
         <AccountNavigation />
       </header>
       <SessionGuard />
+      <Realtime />
       <main id="main">
         <Outlet />
       </main>
@@ -267,6 +271,7 @@ function DetailPage() {
           <p>Created by {n.creator}</p>
           <h2>{n.price} ETH</h2>
           <p>{n.stock} editions available</p>
+          <FavoriteButton id={n.id} name={n.name} />
           <PurchaseControls nft={n} />
         </div>
       </div>

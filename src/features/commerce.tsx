@@ -7,6 +7,8 @@ import { api, clearPrivateData, errorMessage, queryClient } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { useCart, useSession, useWallets } from "./hooks";
 
+import { ProfileEditor, FavoritesPanel } from "./collector";
+
 function ErrorNotice({ error }: { error: unknown }) {
   return error ? (
     <p className="form-error" role="alert">
@@ -731,7 +733,12 @@ export function CheckoutPage() {
                   {collector.name} · {collector.email}
                 </p>
                 <Button
-                  disabled={order.isPending || quote.isPending || !connected}
+                  disabled={
+                    order.isPending ||
+                    quote.isPending ||
+                    !connected ||
+                    review.cartVersion !== cart.data?.version
+                  }
                   onClick={() => void submit()}
                 >
                   {order.isPending ? "Enviando…" : "Confirmar compra simulada"}
@@ -757,7 +764,8 @@ export function OrderPage() {
     enabled: !!session,
     queryFn: async ({ signal }) =>
       (await api.get<Order>(`/orders/${id}`, { signal })).data,
-    refetchInterval: (q) => (q.state.data?.status === "pending" ? 1500 : false),
+    refetchInterval: (q) =>
+      q.state.data?.status === "pending" ? 15000 : false,
     retry: false,
   });
   useEffect(() => {
@@ -853,6 +861,8 @@ export function AccountPage() {
       <h1>Olá, {session?.user.name}</h1>
       <p>{session?.user.email}</p>
       <Link to="/wallets">Gerenciar carteiras →</Link>
+      <ProfileEditor />
+      <FavoritesPanel />
       <h2 className="mt-8">Meus pedidos</h2>
       {orders.isPending ? (
         <Loading />

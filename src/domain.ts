@@ -24,6 +24,10 @@ export interface User {
   name: string;
   email: string;
 }
+export interface Profile extends User {
+  avatar: string;
+  bio: string;
+}
 export interface Session {
   user: User;
   expiresAt: number;
@@ -44,7 +48,12 @@ export interface Cart {
 export interface Quote {
   id: string;
   cartVersion: number;
-  items: (CartItem & { name: string; unitPrice: string; image: string })[];
+  items: (CartItem & {
+    name: string;
+    unitPrice: string;
+    image: string;
+    inventoryVersion: number;
+  })[];
   subtotal: string;
   discount: string;
   networkFee: string;
@@ -69,4 +78,10 @@ export interface Order {
   createdAt: number;
   transaction: string;
   reason?: string;
+}
+export interface ResourceEvent<T> {
+  id: string;
+  resourceId: string;
+  version: number;
+  data: T;
 }

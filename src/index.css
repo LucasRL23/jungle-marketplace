@@ -606,3 +606,117 @@ button:disabled {
     padding: 20px;
   }
 }
+.realtime-notice {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 10px 40px;
+  color: #c3ad96;
+  font-size: 11px;
+  border-bottom: 1px solid #38312a;
+}
+.realtime-notice p {
+  font-size: 13px;
+  color: #ffcb9b;
+  margin: 8px 0;
+}
+.favorite-action {
+  margin: 22px 0;
+}
+.favorite-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffc190;
+  font-size: 13px;
+  margin-top: 15px;
+}
+.profile-editor {
+  margin-top: 35px;
+  padding-top: 30px;
+  border-top: 1px solid #44382c;
+}
+.profile-avatar {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+  margin: 25px 0;
+}
+.profile-avatar img,
+.avatar-placeholder {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.avatar-placeholder {
+  display: grid;
+  place-items: center;
+  background: #4a3321;
+  color: #ffd2a2;
+  font-size: 36px;
+}
+.profile-avatar input[type="file"] {
+  max-width: 100%;
+  font-size: 12px;
+  padding: 8px;
+}
+.profile-avatar > div {
+  min-width: 0;
+}
+.profile-avatar small,
+.profile-editor form > small {
+  font-size: 11px;
+  color: #c3ad96;
+}
+.profile-avatar .text-button {
+  display: block;
+}
+.profile-editor textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #665443;
+  border-radius: 8px;
+  background: #211c17;
+  padding: 12px;
+  color: #f7f3ec;
+  font: inherit;
+}
+.account-favorites {
+  padding: 20px 0;
+  border-bottom: 1px solid #44382c;
+}
+.account-favorites ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  list-style: none;
+  padding: 0;
+}
+.account-favorites a {
+  border: 1px solid #665443;
+  border-radius: 20px;
+  padding: 8px 14px;
+  display: inline-block;
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .realtime-notice {
+    padding: 10px 22px;
+  }
+  .profile-avatar {
+    gap: 15px;
+    align-items: flex-start;
+  }
+  .profile-avatar img,
+  .avatar-placeholder {
+    width: 64px;
+    height: 64px;
+  }
+  .profile-editor h2 {
+    font-size: 25px;
+  }
+  .profile-avatar input[type="file"] {
+    width: 100%;
+  }
+}
