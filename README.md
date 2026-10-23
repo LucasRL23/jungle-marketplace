@@ -1,14 +1,14 @@
 # Kurio · Jungle Frontend Challenge
 
-Implementação do [frontend challenge da Jungle](https://github.com/junglegaming/frontend-challenge). [Repositório privado](https://github.com/LucasRL23/jungle-marketplace) e [prévia privada](https://kurio-jungle-lucas-frontend.groovysky9.chatgpt.site), mantidos assim por decisão do proprietário. A prévia exige autenticação do proprietário via ChatGPT. A URL pública obrigatória para avaliação ainda está pendente.
+Implementação do [frontend challenge da Jungle](https://github.com/junglegaming/frontend-challenge). [Aplicação pública na Vercel](https://kurio-jungle-marketplace.vercel.app) e [repositório público](https://github.com/LucasRL23/jungle-marketplace). Publicação liberada pelo proprietário em 23/10/2026.
 
-A revisão requisito por requisito está em [REVIEW.md](REVIEW.md). Contratos e decisões: [ARCHITECTURE.md](ARCHITECTURE.md).
+A revisão requisito por requisito está em [REVIEW.md](REVIEW.md). Contratos e decisões: [ARCHITECTURE.md](ARCHITECTURE.md). Comparação com o Figma e decisões visuais: [VISUAL.md](VISUAL.md).
 
 ## Executar
 
 Node 22.19+ e pnpm 11.25. `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm build`, `pnpm preview`, `pnpm typecheck`, `pnpm lint`, `pnpm test:e2e`. Antes da primeira execução dos testes: `pnpm exec playwright install chromium`. Relatório: `pnpm test:report`. Traces são preservados em caso de falha.
 
-Os mocks MSW estão habilitados por padrão inclusive no build de demonstração. `VITE_MOCKS=false` desativa a simulação; não há backend real configurado. Nenhuma carteira, cobrança ou transação é real.
+Os mocks MSW estão habilitados por padrão inclusive no build de demonstração. `.env.example` documenta `VITE_MOCKS=true`; copiar o arquivo não é necessário para executar com os mocks. `VITE_MOCKS=false` desativa a simulação; não há backend real configurado. Nenhuma carteira, cobrança ou transação é real.
 
 ## Credenciais fictícias
 
@@ -24,7 +24,7 @@ Cada conta inicial possui uma carteira Ethereum simulada. Novas contas precisam 
 - Catálogo de 24 NFTs, filtros combinados, busca, ordenação e paginação na URL.
 - Composição KURIO baseada no Figma: hero, filtros laterais, grade com 9 itens por página e adaptação responsiva. Quatro artes originais em WebP com srcSet 240/480/960. Origem documentada em `public/artwork/kurio/SOURCES.md`.
 - Faixa de preço combinável com busca e categoria, incluindo refresh, histórico e limpeza dos campos. Decimais são strings na URL (TanStack preserva strings numéricas usando JSON) e wei nos cálculos.
-- Detalhe direto, galeria com três enquadramentos e ampliação, edição standard/limited e controle de quantidade/estoque.
+- Detalhe direto, galeria com quatro enquadramentos e ampliação, edição standard/limited e controle de quantidade/estoque.
 - Cadastro/login em diálogos com controle de foco, logout, recuperação e expiração da sessão, rotas privadas e isolamento entre usuários.
 - Carrinho persistente, merge dos itens do visitante no login e cupons (`JUNGLE10` dá 10%; `EXPIRED` é inválido).
 - Cotação pelo servidor simulado, dinheiro em wei/strings ETH, revisão e revalidação no checkout. Edição de dados invalida a revisão; carteira e rede devem ser compatíveis. Observação do colecionador persiste no recibo.
@@ -47,9 +47,9 @@ Reset do cenário: `localStorage.removeItem('jungle-scenario')`. Reset integral:
 
 ## Situação da entrega
 
-Os fluxos centrais estão implementados, mas a entrega ainda não está encerrada. Faltam publicação pública e smoke test das rotas hospedadas, ajustes de acessibilidade nos erros de formulário, revisão final de fidelidade ao Figma e testes específicos listados em REVIEW.md. Uma falha intermitente no cenário de timeout foi observada e exige investigação, mesmo após uma execução posterior bem-sucedida.
+A aplicação está publicada na Vercel com acesso público. O catálogo e a conexão de atualizações foram conferidos no navegador sem login. Performance mobile permanece abaixo da meta; veja os resultados e limitações em reports/lighthouse/README.md e REVIEW.md.
 
-Na revisão de 23/10/2026, **57 testes Playwright passaram em 3,5 minutos**, sem retries: 48 execuções funcionais desktop/mobile e 9 cenários visuais com 27 capturas. Tipos, lint e formatação passaram. Os testes observam a interface e passam por MSW/Axios e Socket.IO; não substituem as respostas por setters da aplicação.
+A última suíte completa terminou com 60 de 61 testes aprovados: falhou a navegação rápida de perfil para carteiras. A correção de rolagem das âncoras passou em três repetições direcionadas. Uma nova execução completa foi interrompida para priorizar a publicação, conforme solicitado pelo proprietário; não há aprovação integral da suíte para o último build. O timeout passou nos dois perfis na última execução completa. O relatório HTML integral de 61 aprovações pertence ao checkpoint visual anterior à separação de módulos.
 
 ## Exercitar os eventos em tempo real
 
@@ -111,16 +111,16 @@ Os 12 relatórios HTML, 12 JSON e `summary.json` ficam em `reports/lighthouse`. 
 
 ## Resultado Lighthouse local
 
-Medianas de três medições por página/perfil em 23/10/2026:
+Medianas de três medições por página/perfil em 23/10/2026, no build atual:
 
-| Página  | Perfil  | Performance | Acessibilidade | Boas práticas | SEO |
-| ------- | ------- | ----------: | -------------: | ------------: | --: |
-| Início  | Mobile  |          96 |            100 |           100 | 100 |
-| Início  | Desktop |         100 |            100 |           100 | 100 |
-| Detalhe | Mobile  |          95 |            100 |           100 | 100 |
-| Detalhe | Desktop |         100 |            100 |           100 | 100 |
+| Página / perfil   | Performance | Acessibilidade | Boas práticas | SEO |     LCP |      CLS |      TBT |
+| ----------------- | ----------: | -------------: | ------------: | --: | ------: | -------: | -------: |
+| Início / Mobile   |          87 |            100 |           100 | 100 | 3.289 s | 0.000000 | 100.5 ms |
+| Início / Desktop  |         100 |            100 |           100 | 100 | 0.693 s | 0.000175 |   0.0 ms |
+| Detalhe / Mobile  |          88 |            100 |           100 | 100 | 3.061 s | 0.000000 | 152.0 ms |
+| Detalhe / Desktop |         100 |            100 |           100 | 100 | 0.698 s | 0.000000 |   4.5 ms |
 
-Todas as metas do desafio foram atendidas localmente. LCP mobile: 2,492 s no início e 2,708 s no detalhe; TBT: 65,5 ms / 63 ms. Resultados LCP/CLS/TBT completos, hash do build e condições de execução em reports/lighthouse/summary.json. Não são medições do deploy.
+**Performance mobile ainda está abaixo de 90.** As outras três categorias atingiram 100 em todos os perfis. Análise dos gargalos, condições de execução e links para os 12 HTML/JSON em [reports/lighthouse/README.md](reports/lighthouse/README.md). O resumo registra versões, configuração e hash do build. Pontuações de builds anteriores não representam a versão visual atual.
 
 ## Execução dos testes
 

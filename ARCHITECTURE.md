@@ -5,6 +5,7 @@
 - `domain.ts`: contratos entre transporte e UI.
 - `lib/api.ts`: Axios, identificação do visitante, token simulado, tratamento de 401 e QueryClient.
 - `lib/mock-ready.ts`: barreira de inicialização; Axios aguarda MSW antes de enviar requisições.
+- `main.tsx`: inicia MSW em paralelo ao shell. Logging detalhado dos mocks fica ativo no desenvolvimento e desligado em todos os builds de produção (`quiet`), sem mudar handlers, latências, dados ou eventos.
 - `lib/money.ts`: conversão exata entre ETH decimal e bigint em wei.
 - `mocks/store.ts`: estado persistente da simulação e regras de cotação, reserva e liquidação.
 - `mocks/handlers.ts`: API REST MSW. Componentes e hooks não fornecem respostas fictícias.
