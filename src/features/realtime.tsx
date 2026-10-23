@@ -183,6 +183,12 @@ export function Realtime() {
   return (
     <div className="realtime-notice" aria-live="polite">
       <span
+        className={
+          state.status.startsWith("Reconectando") ||
+          state.status.startsWith("Atualizações indisponíveis")
+            ? "connection-warning"
+            : undefined
+        }
         data-testid="realtime-status"
         data-connection-id={state.connectionId}
       >

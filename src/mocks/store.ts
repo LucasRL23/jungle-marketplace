@@ -48,15 +48,15 @@ interface Database {
 const storageKey = "jungle-database-v2";
 let database: Promise<Database> | undefined;
 const names = [
-  "Cosmic Perspective",
-  "Golden Hour",
-  "The Wanderer",
-  "Quiet Dimensions",
-  "Parallel Worlds",
-  "After the Rain",
-  "Digital Bloom",
-  "Beyond the Horizon",
-  "Inner Light",
+  "Emerald Ape #042",
+  "Sage Nomad #009",
+  "Neon Vessel #552",
+  "Cosmic Bloom #118",
+  "Violet Nomad #314",
+  "Ivory Baron #088",
+  "Golden Beat #207",
+  "Golden Echo #021",
+  "Golden Signal #160",
   "New Beginnings",
   "Wild Spirit",
   "Dream State",
@@ -73,6 +73,31 @@ const names = [
   "Another Universe",
   "Slow Days",
 ];
+const prices = [
+  "1.19",
+  "1.69",
+  "1.99",
+  "1.29",
+  "1.39",
+  "1.79",
+  "0.99",
+  "0.89",
+  "0.39",
+];
+function fixtureNft(name: string, i: number): Nft {
+  return {
+    id: `nft-${i + 1}`,
+    name,
+    creator: ["Nova Sato", "Luna Studio", "Noah Chen"][i % 3],
+    category: ["Art", "Photography", "Collectibles"][i % 3],
+    price:
+      prices[i] ||
+      `${1 + (i % 4)}.${String((i * 17 + 25) % 100).padStart(2, "0")}`,
+    stock: i === 7 ? 0 : 8 + i,
+    version: 1,
+    image: `/artwork/kurio/ape-${[1, 2, 3, 4, 2, 3, 4, 1, 4][i % 9]}-480.webp`,
+  };
+}
 export const publicUser = (u: StoredUser): User => ({
   id: u.id,
   name: u.name,
@@ -117,6 +142,20 @@ export async function getDb(): Promise<Database> {
           user.bio ??= "";
           user.favorites ??= [];
         }
+        // Upgrade the provisional artwork fixtures without resetting accounts,
+        // historical quotes or pending orders. Cart versions require a new review.
+        let migrated = false;
+        db.inventory = db.inventory.map((n, i) => {
+          if (!n.image.endsWith(".svg")) return n;
+          migrated = true;
+          return {
+            ...fixtureNft(names[i] || n.name, i),
+            stock: n.stock,
+            version: n.version + 1,
+          };
+        });
+        if (migrated)
+          for (const cart of Object.values(db.carts)) cart.version++;
         persist(db);
         for (const order of db.orders) scheduleOrder(db, order);
         return db;
@@ -152,16 +191,7 @@ export async function getDb(): Promise<Database> {
       carts: {},
       quotes: {},
       orders: [],
-      inventory: names.map((name, i) => ({
-        id: `nft-${i + 1}`,
-        name,
-        creator: ["Alex Morgan", "Luna Studio", "Noah Chen"][i % 3],
-        category: ["Art", "Photography", "Collectibles"][i % 3],
-        price: `${1 + (i % 4)}.${String((i * 17 + 25) % 100).padStart(2, "0")}`,
-        stock: i === 7 ? 0 : 8 + i,
-        version: 1,
-        image: `/artwork/${i % 6}.svg`,
-      })),
+      inventory: names.map(fixtureNft),
     };
     persist(db);
     return db;

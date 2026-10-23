@@ -1,5 +1,6 @@
 {
   "name": "jungle-marketplace",
+  "packageManager": "pnpm@11.25.0",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,11 +12,13 @@
     "typecheck": "tsc -b --pretty false",
     "test:e2e": "pnpm build && playwright test",
     "test:report": "playwright show-report",
+    "audit:lighthouse": "node scripts/lighthouse.mjs",
     "dev:mocks": "vite",
-    "format": "prettier --write src tests *.ts *.json *.md",
-    "format:check": "prettier --check src tests *.ts *.json *.md"
+    "format": "prettier --write src tests scripts *.ts *.json *.md",
+    "format:check": "prettier --check src tests scripts *.ts *.json *.md"
   },
   "dependencies": {
+    "@fontsource-variable/roboto-mono": "^5.3.0",
     "@mswjs/socket.io-binding": "^0.2.0",
     "@radix-ui/react-slot": "^1.5.0",
     "@tailwindcss/vite": "^4.3.3",
@@ -41,6 +44,7 @@
     "lighthouse": "^13.5.0",
     "oxlint": "^1.88.0",
     "prettier": "^3.9.10",
+    "sharp": "^0.35.5",
     "typescript": "~6.0.3",
     "vite": "^8.3.4"
   },

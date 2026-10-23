@@ -31,7 +31,7 @@ test("visitor cart survives refresh and login; coupon and confirmed receipt", as
   await page.goto("/cart");
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Cosmic Perspective" }),
+    page.getByRole("heading", { name: "Emerald Ape #042" }),
   ).toBeVisible();
   await page.getByLabel("Cupom", { exact: true }).fill("INVALID");
   await page.getByRole("button", { name: "Aplicar cupom" }).click();
@@ -56,10 +56,10 @@ test("visitor cart survives refresh and login; coupon and confirmed receipt", as
   const orderUrl = page.url();
   const receipt = await page.locator(".totals dd").allTextContents();
   expect(receipt).toEqual([
-    "1.25 ETH",
-    "−0.125 ETH",
+    "1.19 ETH",
+    "−0.119 ETH",
     "0.0025 ETH",
-    "1.1275 ETH",
+    "1.0735 ETH",
   ]);
   await page.reload();
   await expect(
@@ -96,7 +96,7 @@ test("declined payment preserves cart", async ({ page }) => {
     .getByRole("link", { name: "Voltar ao carrinho", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Cosmic Perspective", exact: true }),
+    page.getByRole("heading", { name: "Emerald Ape #042", exact: true }),
   ).toBeVisible();
 });
 test("timeout recovers the same order after refresh", async ({ page }) => {

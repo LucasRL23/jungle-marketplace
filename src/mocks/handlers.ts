@@ -42,7 +42,15 @@ async function serve(request: Request) {
     path = url.pathname.replace("/api", ""),
     method = request.method;
   await delay(
-    scenario() === "slow" ? 2500 : scenario() === "favorite-error" ? 700 : 100,
+    scenario() === "slow"
+      ? 2500
+      : scenario() === "favorite-error"
+        ? 700
+        : scenario() === "variable" &&
+            path === "/nfts" &&
+            url.searchParams.get("q") === "Emerald"
+          ? 1800
+          : 100,
   );
   if (scenario() === "offline") return HttpResponse.error();
   if (scenario() === "server-error")
@@ -332,7 +340,9 @@ async function serve(request: Request) {
         : db.inventory.filter(
             (n) =>
               (!q || `${n.name} ${n.creator}`.toLowerCase().includes(q)) &&
-              (!p.get("category") || n.category === p.get("category")),
+              (!p.get("category") || n.category === p.get("category")) &&
+              (!p.get("minPrice") || wei(n.price) >= wei(p.get("minPrice")!)) &&
+              (!p.get("maxPrice") || wei(n.price) <= wei(p.get("maxPrice")!)),
           );
     const sort = p.get("sort");
     if (sort === "price-asc" || sort === "price-desc")
@@ -346,9 +356,9 @@ async function serve(request: Request) {
       );
     const page = Math.max(1, Number(p.get("page")) || 1);
     return success({
-      items: items.slice((page - 1) * 8, page * 8),
+      items: items.slice((page - 1) * 9, page * 9),
       total: items.length,
-      pages: Math.ceil(items.length / 8),
+      pages: Math.ceil(items.length / 9),
     });
   }
   if (path.startsWith("/nfts/") && method === "GET")

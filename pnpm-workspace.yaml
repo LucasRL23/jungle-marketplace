@@ -1,4 +1,5 @@
 allowBuilds:
   msw: true
+  sharp: true
 overrides:
   '@opentelemetry/api': 1.9.0

@@ -69,11 +69,11 @@ test("favorites optimistically roll back on failure, persist and stay private", 
     localStorage.setItem("jungle-scenario", "favorite-error"),
   );
   await page
-    .getByRole("button", { name: "Adicionar Cosmic Perspective aos favoritos" })
+    .getByRole("button", { name: "Adicionar Emerald Ape #042 aos favoritos" })
     .click();
   await expect(
     page.getByRole("button", {
-      name: "Remover Cosmic Perspective dos favoritos",
+      name: "Remover Emerald Ape #042 dos favoritos",
     }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("alert")).toContainText(
@@ -81,29 +81,29 @@ test("favorites optimistically roll back on failure, persist and stay private", 
   );
   await expect(
     page.getByRole("button", {
-      name: "Adicionar Cosmic Perspective aos favoritos",
+      name: "Adicionar Emerald Ape #042 aos favoritos",
     }),
   ).toHaveAttribute("aria-pressed", "false");
   await page.evaluate(() => localStorage.removeItem("jungle-scenario"));
   await page
-    .getByRole("button", { name: "Adicionar Cosmic Perspective aos favoritos" })
+    .getByRole("button", { name: "Adicionar Emerald Ape #042 aos favoritos" })
     .click();
   await expect(
     page.getByRole("button", {
-      name: "Remover Cosmic Perspective dos favoritos",
+      name: "Remover Emerald Ape #042 dos favoritos",
     }),
   ).toBeEnabled();
   await page.reload();
   await expect(
     page.getByRole("button", {
-      name: "Remover Cosmic Perspective dos favoritos",
+      name: "Remover Emerald Ape #042 dos favoritos",
     }),
   ).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Sair", exact: true }).click();
   await login(page, "/nft/nft-1", "luna@example.test");
   await expect(
     page.getByRole("button", {
-      name: "Adicionar Cosmic Perspective aos favoritos",
+      name: "Adicionar Emerald Ape #042 aos favoritos",
     }),
   ).toHaveAttribute("aria-pressed", "false");
 });
@@ -186,7 +186,7 @@ test("socket price change requires a new review and discards duplicate and stale
   await demo(page, "nft", { id: "nft-1", price: "2.5", delivery: "duplicate" });
   await expect(
     page.getByText(
-      "Preço ou disponibilidade de Cosmic Perspective atualizado. Revise seu carrinho.",
+      "Preço ou disponibilidade de Emerald Ape #042 atualizado. Revise seu carrinho.",
     ),
   ).toBeVisible();
   await expect(
@@ -222,7 +222,7 @@ test("stock event prevents a stale checkout", async ({ page }) => {
     ),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Remover Cosmic Perspective", exact: true })
+    .getByRole("button", { name: "Remover Emerald Ape #042", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Seu carrinho está vazio." }),

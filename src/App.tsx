@@ -11,7 +11,14 @@ import {
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { isAxiosError } from "axios";
 import { useQuery } from "@tanstack/react-query";
-import { Search, ArrowUpRight, Hexagon } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { Artwork } from "./components/artwork";
+import {
+  Hero,
+  CatalogFilters,
+  CatalogToolbar,
+  MarketplaceFooter,
+} from "./features/marketplace";
 import type { Catalog, CatalogSearch, Nft } from "./domain";
 import { api, errorMessage, queryClient, sessionOptions } from "./lib/api";
 import { Button } from "./components/ui/button";
@@ -37,22 +44,23 @@ function Layout() {
       <a className="skip" href="#main">
         Pular para o conteúdo
       </a>
-      <header>
+      <header className="site-header">
         <Link
           to="/"
           search={{ q: "", category: "", sort: "recent", page: 1 }}
           className="brand"
         >
-          <Hexagon />
-          JUNGLE®
+          KURIO
         </Link>
-        <nav>
+        <nav className="main-navigation" aria-label="Navegação principal">
           <Link
             to="/"
             search={{ q: "", category: "", sort: "recent", page: 1 }}
           >
-            Marketplace
+            Início
           </Link>
+          <a href="/#catalog">Mercado</a>
+          <a href="/#about-kurio">Sobre a Kurio</a>
         </nav>
         <AccountNavigation />
       </header>
@@ -61,14 +69,14 @@ function Layout() {
       <main id="main">
         <Outlet />
       </main>
-      <footer>JUNGLE® · NFTs e valores fictícios</footer>
+      <MarketplaceFooter />
     </>
   );
 }
 function Skeleton() {
   return (
     <div className="grid" role="status" aria-label="Carregando catálogo">
-      {Array.from({ length: 8 }, (_, i) => (
+      {Array.from({ length: 9 }, (_, i) => (
         <div className="skeleton" key={i} />
       ))}
     </div>
@@ -86,148 +94,124 @@ function CatalogPage() {
     navigate({ search: (prev) => ({ ...prev, page: 1, ...patch }) });
   return (
     <>
-      <section className="hero">
+      <Hero />
+      <section id="catalog" className="marketplace-catalog">
+        <CatalogFilters
+          key={`${search.minPrice}:${search.maxPrice}`}
+          search={search}
+          change={change}
+        />
+        <div className="catalog-results">
+          <CatalogToolbar search={search} change={change} />
+          {isPending ? (
+            <Skeleton />
+          ) : isError ? (
+            <div role="alert" className="empty">
+              <h3>Não foi possível carregar o catálogo.</h3>
+              <Button onClick={() => void refetch()}>Tentar novamente</Button>
+            </div>
+          ) : (
+            <>
+              <p className="count" aria-live="polite">
+                {data.total}{" "}
+                {data.total === 1 ? "obra encontrada" : "obras encontradas"}
+              </p>
+              {data.items.length === 0 ? (
+                <div className="empty">
+                  <h3>Nenhuma obra encontrada</h3>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      void change({
+                        q: "",
+                        category: "",
+                        minPrice: "",
+                        maxPrice: "",
+                      })
+                    }
+                  >
+                    Limpar filtros
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid">
+                  {data.items.map((n) => (
+                    <Link
+                      to="/nft/$id"
+                      params={{ id: n.id }}
+                      className="card"
+                      key={n.id}
+                    >
+                      <Artwork
+                        src={n.image}
+                        alt={n.name}
+                        loading="lazy"
+                        width="600"
+                        height="600"
+                      />
+                      <div>
+                        <h3>{n.name}</h3>
+                        <p>
+                          <b>{n.price} ETH</b>
+                          <span>
+                            {n.stock ? "" : "Esgotado"}{" "}
+                            <ArrowUpRight size={16} />
+                          </span>
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {data.pages > 1 && (
+                <nav className="pagination" aria-label="Paginação">
+                  <Button
+                    variant="outline"
+                    disabled={search.page <= 1}
+                    onClick={() => void change({ page: search.page - 1 })}
+                  >
+                    Anterior
+                  </Button>
+                  <span>
+                    {search.page} / {data.pages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    disabled={search.page >= data.pages}
+                    onClick={() => void change({ page: search.page + 1 })}
+                  >
+                    Próxima
+                  </Button>
+                </nav>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+      <section id="about-kurio" className="collection-story">
         <div>
-          <p className="eyebrow">A NEW WORLD OF COLLECTING</p>
-          <h1>
-            Discover art.
+          <p className="eyebrow">UM NOVO UNIVERSO CRIATIVO</p>
+          <h2>
+            Arte digital selecionada.
             <br />
-            Collect <em>extraordinary.</em>
-          </h1>
+            Possibilidades extraordinárias.
+          </h2>
           <p>
-            Explore unique digital creations and find the next piece of your
-            collection.
+            Uma coleção de personagens, perspectivas e histórias. Encontre a
+            peça que combina com a sua.
           </p>
           <Button asChild>
             <a href="#catalog">
-              Explore marketplace <ArrowUpRight size={18} />
+              CONHECER A COLEÇÃO <ArrowUpRight size={16} />
             </a>
           </Button>
         </div>
-        <img
-          src="/artwork/0.svg"
-          alt="Composição abstrata de esferas douradas"
-          width="600"
-          height="600"
+        <Artwork
+          src="/artwork/kurio/ape-4-480.webp"
+          alt="Ape dourado com fones de ouvido"
+          loading="lazy"
+          sizes="(max-width: 700px) 85vw, 350px"
         />
-      </section>
-      <section id="catalog">
-        <p className="eyebrow">CURATED FOR YOU</p>
-        <h2>Explore the marketplace</h2>
-        <div className="filters">
-          <label className="search">
-            <Search size={18} />
-            <span className="sr-only">Buscar NFTs</span>
-            <input
-              value={search.q}
-              placeholder="Search artworks or creators"
-              onChange={(e) => void change({ q: e.target.value })}
-            />
-          </label>
-          <label>
-            <span className="sr-only">Categoria</span>
-            <select
-              value={search.category}
-              onChange={(e) => void change({ category: e.target.value })}
-            >
-              <option value="">All categories</option>
-              {["Art", "Photography", "Collectibles"].map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="sr-only">Ordenação</span>
-            <select
-              value={search.sort}
-              onChange={(e) =>
-                void change({ sort: e.target.value as CatalogSearch["sort"] })
-              }
-            >
-              <option value="recent">Recently added</option>
-              <option value="price-asc">Price: low to high</option>
-              <option value="price-desc">Price: high to low</option>
-            </select>
-          </label>
-        </div>
-        {isPending ? (
-          <Skeleton />
-        ) : isError ? (
-          <div role="alert" className="empty">
-            <h3>Não foi possível carregar o catálogo.</h3>
-            <Button onClick={() => void refetch()}>Tentar novamente</Button>
-          </div>
-        ) : (
-          <>
-            <p className="count" aria-live="polite">
-              {data.total} artworks
-            </p>
-            {data.items.length === 0 ? (
-              <div className="empty">
-                <h3>No artworks found</h3>
-                <Button
-                  variant="outline"
-                  onClick={() => void change({ q: "", category: "" })}
-                >
-                  Clear filters
-                </Button>
-              </div>
-            ) : (
-              <div className="grid">
-                {data.items.map((n) => (
-                  <Link
-                    to="/nft/$id"
-                    params={{ id: n.id }}
-                    className="card"
-                    key={n.id}
-                  >
-                    <img
-                      src={n.image}
-                      alt={n.name}
-                      loading="lazy"
-                      width="600"
-                      height="600"
-                    />
-                    <div>
-                      <small>
-                        {n.creator} · {n.category}
-                      </small>
-                      <h3>{n.name}</h3>
-                      <p>
-                        <b>{n.price} ETH</b>
-                        <span>
-                          {n.stock ? "Available" : "Sold out"}{" "}
-                          <ArrowUpRight size={16} />
-                        </span>
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-            {data.pages > 1 && (
-              <nav className="pagination" aria-label="Paginação">
-                <Button
-                  variant="outline"
-                  disabled={search.page <= 1}
-                  onClick={() => void change({ page: search.page - 1 })}
-                >
-                  Anterior
-                </Button>
-                <span>
-                  {search.page} / {data.pages}
-                </span>
-                <Button
-                  variant="outline"
-                  disabled={search.page >= data.pages}
-                  onClick={() => void change({ page: search.page + 1 })}
-                >
-                  Próxima
-                </Button>
-              </nav>
-            )}
-          </>
-        )}
       </section>
     </>
   );
@@ -261,16 +245,21 @@ function DetailPage() {
   return (
     <section>
       <Link to="/" search={{ q: "", category: "", sort: "recent", page: 1 }}>
-        ← Back to marketplace
+        Início / Mercado
       </Link>
       <div className="detail">
-        <img src={n.image} alt={n.name} />
+        <Artwork
+          src={n.image}
+          alt={n.name}
+          sizes="(max-width: 700px) 90vw, 550px"
+          fetchPriority="high"
+        />
         <div>
           <p className="eyebrow">{n.category}</p>
           <h1>{n.name}</h1>
-          <p>Created by {n.creator}</p>
+          <p>Criado por {n.creator}</p>
           <h2>{n.price} ETH</h2>
-          <p>{n.stock} editions available</p>
+          <p>{n.stock} edições disponíveis</p>
           <FavoriteButton id={n.id} name={n.name} />
           <PurchaseControls nft={n} />
         </div>
@@ -312,6 +301,14 @@ const catalogRoute = createRoute({
       : "",
     sort: s.sort === "price-asc" || s.sort === "price-desc" ? s.sort : "recent",
     page: Math.max(1, Math.floor(Number(s.page) || 1)),
+    minPrice:
+      typeof s.minPrice === "string" && /^\d+(\.\d{1,18})?$/.test(s.minPrice)
+        ? s.minPrice
+        : "",
+    maxPrice:
+      typeof s.maxPrice === "string" && /^\d+(\.\d{1,18})?$/.test(s.maxPrice)
+        ? s.maxPrice
+        : "",
   }),
   component: CatalogPage,
 });

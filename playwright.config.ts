@@ -14,6 +14,14 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "tablet",
+      testMatch: /visual\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 768, height: 1024 },
+      },
+    },
+    {
       name: "desktop",
       use: {
         ...devices["Desktop Chrome"],

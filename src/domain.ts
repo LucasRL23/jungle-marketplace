@@ -14,6 +14,8 @@ export interface Catalog {
   pages: number;
 }
 export interface CatalogSearch {
+  minPrice?: string;
+  maxPrice?: string;
   q: string;
   category: string;
   sort: "recent" | "price-asc" | "price-desc";

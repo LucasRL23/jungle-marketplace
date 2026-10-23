@@ -58,7 +58,9 @@ Catálogo: chave inclui todos os parâmetros, staleTime 30s; detalhe inclui id. 
 
 ## Desvios atuais
 
-Layout preliminar ainda não validado contra os frames do Figma. Seis SVGs abstratos locais são placeholders de desenvolvimento; tipografia usa fonte de sistema. Regressão visual e Lighthouse permanecem pendentes. Nenhuma pontuação ou equivalência visual é alegada. Link de explorador não existe porque as referências são simuladas.
+O catálogo segue a composição KURIO observada no Figma e usa quatro artes originais, convertidas para WebP em 240/480/960 pixels. `Artwork` fornece srcSet e sizes; a imagem principal tem prioridade alta, as do catálogo usam lazy loading. A tipografia usa Roboto Mono local, ainda uma aproximação a confirmar. Os SVGs antigos permanecem para recibos históricos que já guardaram esses caminhos. A migração do inventário troca apenas as fixtures antigas e incrementa as versões de carrinho, preservando contas e snapshots de pedidos. Baselines Playwright de catálogo, detalhe, carrinho e checkout cobrem 390/768/1440; elas detectam regressões da implementação e não provam igualdade de pixels com o Figma. Telas internas e alguns blocos editoriais ainda precisam de revisão visual. Link de explorador não existe porque as referências são simuladas.
+
+Filtros de preço são strings ETH validadas na rota, combinadas com categoria/busca/ordenação e enviadas pela chave completa de query. O servidor compara wei sem ponto flutuante. O formulário é reinicializado quando os limites da URL mudam, incluindo Voltar/Limpar. O cenário REST `variable` responde a `q=Emerald` em 1800ms e às outras consultas em 100ms; o teste observa o cancelamento da requisição obsoleta e os resultados da consulta nova.
 
 ## Perfil e favoritos
 
