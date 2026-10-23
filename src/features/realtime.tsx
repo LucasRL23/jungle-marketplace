@@ -52,7 +52,14 @@ export function Realtime() {
       if (seen.size > 256) seen.delete(seen.values().next().value!);
       return true;
     };
-    socket.on("connect", () => socket.emit("subscribe", { token }));
+    socket.on("connect", () => {
+      setState({
+        status: "Conectando atualizações…",
+        notice: "",
+        connectionId: "",
+      });
+      socket.emit("subscribe", { token });
+    });
     socket.on("session.expired", () => {
       if (current()) void api.get("/session").catch(() => undefined);
     });
@@ -138,10 +145,11 @@ export function Realtime() {
             }
           : old,
       );
-      setState((prev) => ({
-        ...prev,
-        notice: `Preço ou disponibilidade de ${event.data.name} atualizado. Revise seu carrinho.`,
-      }));
+      if (!location.pathname.startsWith("/orders/"))
+        setState((prev) => ({
+          ...prev,
+          notice: `Preço ou disponibilidade de ${event.data.name} atualizado. Revise seu carrinho.`,
+        }));
       void queryClient.invalidateQueries({
         predicate: (q) => isInventoryQuery(q.queryKey),
       });

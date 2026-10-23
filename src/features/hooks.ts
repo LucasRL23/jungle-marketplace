@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Cart, Wallet } from "../domain";
+import type { Cart, Wallet, Profile, Quote } from "../domain";
 import { api, sessionOptions } from "../lib/api";
 export const useSession = () => useQuery(sessionOptions);
 export function useCart() {
@@ -20,5 +20,32 @@ export function useWallets() {
     enabled: !!session,
     queryFn: async ({ signal }) =>
       (await api.get<Wallet[]>("/wallets", { signal })).data,
+  });
+}
+
+export function useProfile() {
+  const { data: session } = useSession();
+  const queryKey = ["private", session?.user.id, "profile"];
+  return {
+    ...useQuery({
+      queryKey,
+      enabled: !!session,
+      queryFn: async ({ signal }) =>
+        (await api.get<Profile>("/profile", { signal })).data,
+    }),
+    queryKey,
+  };
+}
+
+export function useCartQuote(cart: ReturnType<typeof useCart>) {
+  return useQuery({
+    queryKey:
+      cart.owner === "guest"
+        ? ["guest-quote", cart.data?.version]
+        : ["private", cart.owner, "quote", cart.data?.version],
+    enabled: !!cart.data?.items.length,
+    queryFn: async ({ signal }) =>
+      (await api.post<Quote>("/quote", {}, { signal })).data,
+    retry: false,
   });
 }

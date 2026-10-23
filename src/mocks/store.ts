@@ -347,7 +347,10 @@ export function scheduleOrder(db: Database, order: StoredOrder) {
     setTimeout(
       () => {
         orderTimers.delete(order.id);
-        if (!settleOrder(db, order)) return;
+        if (!settleOrder(db, order)) {
+          scheduleOrder(db, order);
+          return;
+        }
         publish("order.updated", publicOrder(order));
         for (const item of order.quote.items)
           publish(

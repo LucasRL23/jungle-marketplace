@@ -1,10 +1,12 @@
 # Kurio · Jungle Frontend Challenge
 
-Solução em desenvolvimento para o [frontend challenge da Jungle](https://github.com/junglegaming/frontend-challenge). Código salvo em repositório privado: https://github.com/LucasRL23/jungle-marketplace.
+Implementação do [frontend challenge da Jungle](https://github.com/junglegaming/frontend-challenge). [Repositório privado](https://github.com/LucasRL23/jungle-marketplace) e [prévia privada](https://kurio-jungle-lucas-frontend.groovysky9.chatgpt.site), mantidos assim por decisão do proprietário. A prévia exige autenticação do proprietário via ChatGPT. A URL pública obrigatória para avaliação ainda está pendente.
+
+A revisão requisito por requisito está em [REVIEW.md](REVIEW.md). Contratos e decisões: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Executar
 
-Node 22.19+ e pnpm 11.25. `pnpm install`, `pnpm dev`, `pnpm build`, `pnpm preview`, `pnpm typecheck`, `pnpm lint`, `pnpm test:e2e`. Antes da primeira execução dos testes: `pnpm exec playwright install chromium`. Relatório: `pnpm test:report`. Traces são preservados em caso de falha.
+Node 22.19+ e pnpm 11.25. `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm build`, `pnpm preview`, `pnpm typecheck`, `pnpm lint`, `pnpm test:e2e`. Antes da primeira execução dos testes: `pnpm exec playwright install chromium`. Relatório: `pnpm test:report`. Traces são preservados em caso de falha.
 
 Os mocks MSW estão habilitados por padrão inclusive no build de demonstração. `VITE_MOCKS=false` desativa a simulação; não há backend real configurado. Nenhuma carteira, cobrança ou transação é real.
 
@@ -17,15 +19,15 @@ Os mocks MSW estão habilitados por padrão inclusive no build de demonstração
 
 Cada conta inicial possui uma carteira Ethereum simulada. Novas contas precisam cadastrar uma carteira em `/wallets`. Use um endereço fictício com `0x` e 40 caracteres hexadecimais. Não use dados ou senhas reais.
 
-## Implementado nesta etapa
+## Funcionalidades
 
 - Catálogo de 24 NFTs, filtros combinados, busca, ordenação e paginação na URL.
 - Composição KURIO baseada no Figma: hero, filtros laterais, grade com 9 itens por página e adaptação responsiva. Quatro artes originais em WebP com srcSet 240/480/960. Origem documentada em `public/artwork/kurio/SOURCES.md`.
 - Faixa de preço combinável com busca e categoria, incluindo refresh, histórico e limpeza dos campos. Decimais são strings na URL (TanStack preserva strings numéricas usando JSON) e wei nos cálculos.
-- Detalhe direto, edição standard/limited e controle de quantidade/estoque.
-- Cadastro/login/logout, recuperação e expiração da sessão, rotas privadas e isolamento entre usuários.
+- Detalhe direto, galeria com três enquadramentos e ampliação, edição standard/limited e controle de quantidade/estoque.
+- Cadastro/login em diálogos com controle de foco, logout, recuperação e expiração da sessão, rotas privadas e isolamento entre usuários.
 - Carrinho persistente, merge dos itens do visitante no login e cupons (`JUNGLE10` dá 10%; `EXPIRED` é inválido).
-- Cotação pelo servidor simulado, dinheiro em wei/strings ETH, revisão e revalidação no checkout.
+- Cotação pelo servidor simulado, dinheiro em wei/strings ETH, revisão e revalidação no checkout. Edição de dados invalida a revisão; carteira e rede devem ser compatíveis. Observação do colecionador persiste no recibo.
 - Carteiras principal/secundária, edição, rede e conexão/recusa/desconexão simuladas.
 - Pedido idempotente, estados pendente/confirmado/recusado e recibo por snapshot.
 - Recuperação da mesma tentativa após timeout ou refresh; itens preservados na recusa e abatidos apenas após confirmação.
@@ -43,25 +45,11 @@ Para `declined`, `pending` e `timeout`, selecione o cenário antes de confirmar 
 
 Reset do cenário: `localStorage.removeItem('jungle-scenario')`. Reset integral: no console, `localStorage.clear(); sessionStorage.clear(); location.reload()`. Isso apaga somente dados locais desta origem e recria as fixtures. Cada teste Playwright inicia num contexto isolado.
 
-## Pendências do desafio
+## Situação da entrega
 
-- [x] Artes originais do Figma e primeira composição do catálogo.
-- [ ] Fidelidade final de todos os frames, especialmente formulários internos. A família exata da fonte ainda precisa ser confirmada; Roboto Mono é uma aproximação local.
-- [x] Favoritos otimistas com rollback.
-- [x] Perfil, avatar e alteração de senha.
-- [x] Eventos pelo socket.io-client + binding MSW, versionamento, reconexão e alterações de preço/estoque durante o checkout.
-- [x] Cenários determinísticos de eventos duplicados/antigos e perda de conexão.
-- [x] Cenário REST de latência variável e cancelamento de buscas antigas.
-- [x] Baselines visuais de catálogo/detalhe/carrinho/checkout/perfil/carteiras em 390, 768 e 1440 pixels.
-- [ ] Revisar cobertura restante do enunciado e navegação completa por teclado.
-- [x] Auditar Lighthouse (3 medições por página/perfil e medianas).
-- [ ] Deploy público e verificação de rotas diretas em produção.
+Os fluxos centrais estão implementados, mas a entrega ainda não está encerrada. Faltam publicação pública e smoke test das rotas hospedadas, ajustes de acessibilidade nos erros de formulário, revisão final de fidelidade ao Figma e testes específicos listados em REVIEW.md. Uma falha intermitente no cenário de timeout foi observada e exige investigação, mesmo após uma execução posterior bem-sucedida.
 
-Socket.IO, regressão visual e auditoria Lighthouse local estão integrados. Esta etapa ainda não é a entrega final.
-
-## Validação do checkpoint
-
-Em 22/10/2026: build de produção e lint passaram; **41 testes Playwright passaram** (38 execuções funcionais em Chromium nas larguras desktop 1440 e mobile 390; 3 cenários visuais com 4 capturas cada, em 390/768/1440). A suíte cobre catálogo, compra confirmada e recibo após refresh, cupom, recusa, timeout idempotente, cadastro, carteiras, logout/troca de usuário, isolamento de recibos, expiração no checkout e recuperação de falha de rede em rota privada. Também foram verificados rollback de favoritos, perfil/avatar/senha, eventos Socket.IO duplicados/antigos, alteração de preço/estoque, confirmação sem polling, reconexão e liberação da subscription anterior na troca de usuário. Filtros de preço combinados, refresh/histórico e cancelamento de busca obsoleta também passaram. As 12 baselines visuais passaram sem atualização após os ajustes de acessibilidade. Lint e formatação passaram. Isso não representa cobertura completa do enunciado; pendências estão listadas acima.
+Na revisão de 23/10/2026, **57 testes Playwright passaram em 3,5 minutos**, sem retries: 48 execuções funcionais desktop/mobile e 9 cenários visuais com 27 capturas. Tipos, lint e formatação passaram. Os testes observam a interface e passam por MSW/Axios e Socket.IO; não substituem as respostas por setters da aplicação.
 
 ## Exercitar os eventos em tempo real
 
@@ -107,7 +95,7 @@ A suíte E2E usa o build otimizado via `vite preview` na porta 4173; `pnpm test:
 
 ## Regressão visual
 
-`tests/visual.spec.ts` captura catálogo, detalhe, carrinho com um item, checkout autenticado, perfil e carteiras, em 390, 768 e 1440 pixels. As 18 imagens aprovadas ficam em `tests/visual.spec.ts-snapshots`. O teste espera fontes e imagens visíveis, desativa animações durante a captura e verifica ausência de overflow horizontal. Os filtros mobile podem ser recolhidos pelo controle nativo `details`.
+`tests/visual.spec.ts` captura catálogo, detalhe, carrinho com um item, checkout autenticado, recibo, perfil, carteiras, login e cadastro, em 390, 768 e 1440 pixels. As 27 imagens aprovadas ficam em `tests/visual.spec.ts-snapshots`. O teste espera fontes e imagens visíveis, desativa animações durante a captura e verifica ausência de overflow horizontal. Os filtros mobile podem ser recolhidos pelo controle nativo `details`.
 
 As baselines atuais foram geradas em Windows com o Chromium instalado pela versão de Playwright fixada no lockfile. Execute `pnpm exec playwright test tests/visual.spec.ts` para comparar. Para aprovar uma alteração visual intencional: `pnpm exec playwright test tests/visual.spec.ts --update-snapshots`, inspecione cada mudança e versione as imagens. Outros sistemas operacionais usam arquivos próprios para acomodar diferenças de renderização de fontes. As imagens comparam a implementação com a sua baseline; a revisão de fidelidade ao Figma é uma atividade separada.
 
@@ -123,6 +111,19 @@ Os 12 relatórios HTML, 12 JSON e `summary.json` ficam em `reports/lighthouse`. 
 
 ## Resultado Lighthouse local
 
-No checkpoint `76abf6c` (antes dos ajustes seguintes na área do colecionador), as medianas de três execuções por página/perfil foram 96 de desempenho no mobile e 100 no desktop, tanto no catálogo quanto no detalhe. Acessibilidade, boas práticas e SEO: 100 nos quatro grupos. LCP mobile: 2.50s no catálogo e 2.58s no detalhe; TBT: 57ms/58ms. Resultados completos e condições em `reports/lighthouse/summary.json`; não são medições do deploy.
+Medianas de três medições por página/perfil em 23/10/2026:
 
-Em 23/10/2026, a suíte expandida passou em **44 execuções**: 38 funcionais e 6 cenários visuais (18 capturas). A validação de perfil cobre usuário duplicado, ENS inválido, persistência dos novos campos e mostrar/ocultar senha. Depois do ajuste de seleção no menu, as três verificações de perfil/carteiras passaram novamente, incluindo navegação por hash e seleção única.
+| Página  | Perfil  | Performance | Acessibilidade | Boas práticas | SEO |
+| ------- | ------- | ----------: | -------------: | ------------: | --: |
+| Início  | Mobile  |          96 |            100 |           100 | 100 |
+| Início  | Desktop |         100 |            100 |           100 | 100 |
+| Detalhe | Mobile  |          95 |            100 |           100 | 100 |
+| Detalhe | Desktop |         100 |            100 |           100 | 100 |
+
+Todas as metas do desafio foram atendidas localmente. LCP mobile: 2,492 s no início e 2,708 s no detalhe; TBT: 65,5 ms / 63 ms. Resultados LCP/CLS/TBT completos, hash do build e condições de execução em reports/lighthouse/summary.json. Não são medições do deploy.
+
+## Execução dos testes
+
+A configuração usa um worker por padrão para evitar disputa de recursos nos cenários de tempo. PW_WORKERS permite alteração explícita. Não há retries automáticos para ocultar falhas. Contextos são isolados por teste; o pedido pendente tem teste com relógio controlado. O teste de timeout usa o timeout real do Axios/XHR, que não avança com o relógio JavaScript do Playwright.
+
+O HTML gerado fica em playwright-report/index.html, aberto por pnpm test:report. Traces de falhas ficam em test-results, com trace: retain-on-failure. A cópia da execução desta revisão fica em reports/playwright e pode ser aberta com pnpm exec playwright show-report reports/playwright.

@@ -1,25 +1,34 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-async function capture(page: Page, name: string) {
+async function capture(page: Page, name: string, fullPage = true) {
   await page.evaluate(() => document.fonts.ready);
-  for (const image of await page.locator("main img").all()) {
+  for (const image of await page
+    .locator(fullPage ? "main img" : ".hero-art")
+    .all()) {
     if (!(await image.isVisible())) continue;
-    await image.scrollIntoViewIfNeeded();
+    if (fullPage) await image.scrollIntoViewIfNeeded();
     await image.evaluate(async (img: HTMLImageElement) => {
       await img.decode();
     });
   }
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await page.evaluate(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    document.querySelectorAll<HTMLElement>(".related-grid").forEach((grid) => {
+      grid.scrollLeft = 0;
+    });
+  });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
   await expect(page).toHaveScreenshot(name, {
-    fullPage: true,
+    fullPage,
     animations: "disabled",
     maxDiffPixelRatio: 0.005,
+    mask: [page.locator(".receipt-code"), page.locator(".receipt-date")],
+    maskColor: "#4a3321",
   });
 }
 
@@ -44,6 +53,7 @@ test("catalog, detail, cart and checkout visual baselines", async ({
   await expect(
     page.getByRole("heading", { name: "Emerald Ape #042", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".cart-summary .totals")).toBeVisible();
   await capture(page, "cart.png");
   await page.getByRole("link", { name: "Ir para pagamento" }).click();
   await page.getByLabel("E-mail", { exact: true }).fill("alex@example.test");
@@ -55,7 +65,23 @@ test("catalog, detail, cart and checkout visual baselines", async ({
   await expect(
     page.getByRole("combobox", { name: "Carteira", exact: true }),
   ).toBeVisible();
+  await expect(page.getByLabel("Nome de usuário", { exact: true })).toHaveValue(
+    "alex.collector",
+  );
+  await expect(page.locator(".checkout-summary .totals")).toBeVisible();
   await capture(page, "checkout.png");
+  await page
+    .getByRole("combobox", { name: "Carteira", exact: true })
+    .selectOption("wallet-1");
+  await page
+    .getByRole("button", { name: "Conectar carteira simulada" })
+    .click();
+  await page.getByRole("button", { name: "Revisar pedido" }).click();
+  await page.getByRole("button", { name: "Confirmar compra simulada" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Compra confirmada", exact: true }),
+  ).toBeVisible();
+  await capture(page, "receipt.png");
 });
 
 test("collector profile and wallets visual baselines", async ({ page }) => {
@@ -91,4 +117,16 @@ test("collector profile and wallets visual baselines", async ({ page }) => {
     page.getByRole("button", { name: "Editar Primary wallet", exact: true }),
   ).toBeVisible();
   await capture(page, "wallets.png");
+});
+
+test("login and registration dialog visual baselines", async ({ page }) => {
+  await page.goto("/login");
+  await expect(
+    page.getByRole("dialog", { name: "Bem-vindo de volta", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".catalog-results .card")).toHaveCount(9);
+  await capture(page, "login.png", false);
+  await page.getByRole("link", { name: "Criar conta", exact: true }).click();
+  await expect(page.getByLabel("Nome completo", { exact: true })).toBeFocused();
+  await capture(page, "register.png", false);
 });

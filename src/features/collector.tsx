@@ -2,7 +2,8 @@ import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Heart, Eye, EyeOff } from "lucide-react";
+import { Heart } from "lucide-react";
+import { PasswordField } from "../components/ui/password-field";
 import type { Profile, Session } from "../domain";
 import { api, errorMessage, queryClient } from "../lib/api";
 import { useSession } from "./hooks";
@@ -139,45 +140,6 @@ async function readAvatar(file: File) {
     throw new Error("O arquivo de imagem é inválido.");
   }
   return value;
-}
-function PasswordField({
-  name,
-  label,
-  autoComplete,
-  errorId,
-  minLength,
-}: {
-  name: string;
-  label: string;
-  autoComplete: string;
-  errorId?: string;
-  minLength?: number;
-}) {
-  const [visible, setVisible] = useState(false);
-  return (
-    <div className="field">
-      <label htmlFor={`profile-${name}`}>{label}</label>
-      <div className="password-input">
-        <input
-          id={`profile-${name}`}
-          name={name}
-          type={visible ? "text" : "password"}
-          autoComplete={autoComplete}
-          required
-          minLength={minLength}
-          aria-describedby={errorId}
-        />
-        <button
-          type="button"
-          aria-label={`${visible ? "Ocultar" : "Mostrar"} ${label.toLowerCase()}`}
-          aria-pressed={visible}
-          onClick={() => setVisible(!visible)}
-        >
-          {visible ? <EyeOff size={17} /> : <Eye size={17} />}
-        </button>
-      </div>
-    </div>
-  );
 }
 export function ProfileEditor() {
   const { data: session } = useSession(),

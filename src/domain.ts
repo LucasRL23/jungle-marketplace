@@ -78,7 +78,7 @@ export interface Order {
   status: "pending" | "confirmed" | "declined";
   version: number;
   quote: Quote;
-  collector: { name: string; email: string };
+  collector: { name: string; email: string; note?: string };
   wallet: Wallet;
   createdAt: number;
   transaction: string;

@@ -47,7 +47,28 @@ test("visitor cart survives refresh and login; coupon and confirmed receipt", as
   await expect(
     page.getByRole("heading", { name: "Pagamento", exact: true }),
   ).toBeVisible();
+  await page
+    .getByRole("combobox", { name: "Carteira", exact: true })
+    .selectOption("wallet-1");
+  await page
+    .getByRole("combobox", { name: "Rede", exact: true })
+    .selectOption("Polygon");
+  await expect(
+    page.getByRole("button", { name: "Conectar carteira simulada" }),
+  ).toBeDisabled();
+  await expect(page.getByRole("alert")).toContainText("Rede incompatível");
+  await page
+    .getByRole("combobox", { name: "Rede", exact: true })
+    .selectOption("Ethereum");
+  await page
+    .getByLabel("Observação do colecionador (opcional)", { exact: true })
+    .fill("Minha primeira obra da coleção.");
   await review(page);
+  await page.getByLabel("Nome completo", { exact: true }).fill("Alex Purchase");
+  await expect(
+    page.getByRole("button", { name: "Confirmar compra simulada" }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Revisar pedido" }).click();
   await page.getByRole("button", { name: "Confirmar compra simulada" }).click();
   await expect(page).toHaveURL(/\/orders\//);
   await expect(
@@ -66,6 +87,12 @@ test("visitor cart survives refresh and login; coupon and confirmed receipt", as
     page.getByRole("heading", { name: "Compra confirmada", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".totals dd")).toHaveText(receipt);
+  await expect(
+    page.getByText("Minha primeira obra da coleção.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Alex Purchase · alex@example.test", { exact: true }),
+  ).toBeVisible();
   await page.getByRole("link", { name: "Carrinho", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Seu carrinho está vazio." }),
@@ -79,6 +106,39 @@ test("visitor cart survives refresh and login; coupon and confirmed receipt", as
   await expect(
     page.getByRole("heading", { name: "Compra confirmada", exact: true }),
   ).toHaveCount(0);
+});
+test("editing collector data during a quote requires a new review", async ({
+  page,
+}) => {
+  await addNft(page);
+  await page.goto("/checkout");
+  await login(page);
+  await page
+    .getByRole("combobox", { name: "Carteira", exact: true })
+    .selectOption("wallet-1");
+  await page
+    .getByRole("button", { name: "Conectar carteira simulada" })
+    .click();
+  await page.evaluate(() => localStorage.setItem("jungle-scenario", "slow"));
+  await page.getByRole("button", { name: "Revisar pedido" }).click();
+  await expect(page.getByRole("button", { name: "Validando…" })).toBeVisible();
+  await page
+    .getByLabel("Nome completo", { exact: true })
+    .fill("Updated Collector");
+  await page.evaluate(() => localStorage.removeItem("jungle-scenario"));
+  await expect(
+    page.getByRole("button", { name: "Revisar pedido" }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Confirmar compra simulada" }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Revisar pedido" }).click();
+  await expect(
+    page.getByRole("button", { name: "Confirmar compra simulada" }),
+  ).toBeEnabled();
+  await expect(
+    page.getByText("Updated Collector · alex@example.test", { exact: true }),
+  ).toBeVisible();
 });
 test("declined payment preserves cart", async ({ page }) => {
   await addNft(page);
@@ -98,6 +158,34 @@ test("declined payment preserves cart", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Emerald Ape #042", exact: true }),
   ).toBeVisible();
+});
+test("pending settlement advances under a controlled clock and persists", async ({
+  page,
+}) => {
+  await addNft(page);
+  await page.goto("/checkout");
+  await login(page);
+  await review(page);
+  await page.clock.install({ time: await page.evaluate(() => Date.now()) });
+  await page.evaluate(() => localStorage.setItem("jungle-scenario", "pending"));
+  await page.getByRole("button", { name: "Confirmar compra simulada" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Pedido em processamento", exact: true }),
+  ).toBeVisible();
+  await page.clock.fastForward(31000);
+  await expect(
+    page.getByRole("heading", { name: "Compra confirmada", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Compra confirmada", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("jungle-database-v2")!).orders.length,
+    ),
+  ).toBe(1);
 });
 test("timeout recovers the same order after refresh", async ({ page }) => {
   await addNft(page);
@@ -130,9 +218,20 @@ test("register validation, wallet persistence, logout and user isolation", async
   await page.goto("/register");
   await page.getByLabel("Nome completo").fill("Test Collector");
   await page
+    .getByLabel("Nome de usuário", { exact: true })
+    .fill("test.collector");
+  await page
     .getByLabel("E-mail", { exact: true })
     .fill("collector@example.test");
   await page.getByLabel("Senha", { exact: true }).fill("Jungle123!");
+  await page
+    .getByLabel("Confirmar senha", { exact: true })
+    .fill("WrongPassword123!");
+  await page.getByRole("button", { name: "Criar conta", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "confirmação da senha não corresponde",
+  );
+  await page.getByLabel("Confirmar senha", { exact: true }).fill("Jungle123!");
   await page.getByRole("button", { name: "Criar conta", exact: true }).click();
   await expect(
     page.getByRole("link", { name: "Test", exact: true }),

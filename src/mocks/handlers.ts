@@ -82,7 +82,8 @@ async function serve(request: Request) {
   if ((path === "/login" || path === "/register") && method === "POST") {
     const email = text(body, "email").toLowerCase(),
       password = typeof body.password === "string" ? body.password : "",
-      name = text(body, "name");
+      name = text(body, "name"),
+      username = text(body, "username").toLowerCase();
     if (!emailPattern.test(email) || password.length < 8)
       fail(
         422,
@@ -91,16 +92,27 @@ async function serve(request: Request) {
     let user = db.users.find((u) => u.email === email);
     if (path === "/register") {
       if (name.length < 2) fail(422, "Informe seu nome completo.");
+      if (
+        typeof body.confirmPassword === "string" &&
+        body.confirmPassword !== password
+      )
+        fail(422, "A confirmação da senha não corresponde.");
+      if (username && !/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username))
+        fail(422, "Use de 3 a 30 caracteres no nome de usuário.");
+      if (username && db.users.some((u) => u.username === username))
+        fail(409, "Este nome de usuário já está em uso.");
       if (user) fail(409, "Já existe uma conta com este e-mail.");
       const salt = crypto.randomUUID(),
         hash = await passwordHash(password, salt);
       if (db.users.some((u) => u.email === email))
         fail(409, "Já existe uma conta com este e-mail.");
+      if (username && db.users.some((u) => u.username === username))
+        fail(409, "Este nome de usuário já está em uso.");
       user = {
         id: crypto.randomUUID(),
         name,
         email,
-        username: `collector-${crypto.randomUUID().slice(0, 12)}`,
+        username: username || `collector-${crypto.randomUUID().slice(0, 12)}`,
         ens: "",
         walletNickname: "",
         salt,
@@ -516,8 +528,9 @@ async function serve(request: Request) {
     if (body.network !== wallet.network || body.connected !== true)
       fail(422, "Conecte a carteira na rede selecionada.");
     const name = text(body, "name"),
-      email = text(body, "email");
-    if (name.length < 2 || !emailPattern.test(email))
+      email = text(body, "email"),
+      note = text(body, "note");
+    if (name.length < 2 || !emailPattern.test(email) || note.length > 500)
       fail(422, "Confira os dados do colecionador.");
     const order = {
       id: crypto.randomUUID(),
@@ -525,7 +538,7 @@ async function serve(request: Request) {
       status: "pending" as const,
       version: 1,
       quote: structuredClone(stored),
-      collector: { name, email },
+      collector: { name, email, note },
       wallet: structuredClone(wallet),
       createdAt: Date.now(),
       transaction: "",

@@ -1,4 +1,33 @@
 import { test, expect } from "@playwright/test";
+test("artwork views and zoom are keyboard accessible", async ({ page }) => {
+  await page.goto("/nft/nft-1");
+  await page
+    .getByRole("button", { name: "Detalhe do rosto", exact: true })
+    .click();
+  await expect(page.locator(".gallery-stage")).toHaveAttribute(
+    "data-view",
+    "face",
+  );
+  const zoom = page.getByRole("button", { name: "Ampliar arte", exact: true });
+  await zoom.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("dialog", { name: "Arte de Emerald Ape #042" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Adicionar ao carrinho", exact: true }),
+  ).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(zoom).toBeFocused();
+  await page
+    .getByRole("button", { name: "Arte completa", exact: true })
+    .click();
+  await expect(page.locator(".gallery-stage")).toHaveAttribute(
+    "data-view",
+    "full",
+  );
+});
 test("price bounds combine with category and search and survive history", async ({
   page,
 }) => {

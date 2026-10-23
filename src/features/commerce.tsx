@@ -5,11 +5,39 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type { CartItem, LoginResult, Nft, Order, Quote } from "../domain";
 import { api, clearPrivateData, errorMessage, queryClient } from "../lib/api";
 import { Button } from "../components/ui/button";
-import { useCart, useSession, useWallets } from "./hooks";
+import {
+  useCart,
+  useSession,
+  useWallets,
+  useCartQuote,
+  useProfile,
+} from "./hooks";
+import { eth, wei } from "../lib/money";
+import { Artwork } from "../components/artwork";
+import { Breadcrumb } from "../components/breadcrumb";
+import { RelatedNfts } from "./related-nfts";
 
 import { ProfileEditor, FavoritesPanel } from "./collector";
 import { AccountShell } from "./account-shell";
-import { LogOut } from "lucide-react";
+import {
+  LogOut,
+  X,
+  Plus,
+  Minus,
+  Trash2,
+  BadgeCheck,
+  Clock3,
+  CircleX,
+} from "lucide-react";
+import { MarketplaceCatalog } from "./catalog";
+import { PasswordField } from "../components/ui/password-field";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "../components/ui/dialog";
 
 function ErrorNotice({ error }: { error: unknown }) {
   return error ? (
@@ -157,74 +185,197 @@ export function AccountNavigation() {
     </div>
   );
 }
+const authCatalog = {
+  q: "",
+  category: "",
+  sort: "recent" as const,
+  page: 1,
+  minPrice: "",
+  maxPrice: "",
+};
 export function LoginPage() {
-  const path = useRouterState({ select: (s) => s.location.pathname }),
-    register = path === "/register";
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  return <LoginDialog key={path} register={path === "/register"} />;
+}
+function LoginDialog({ register }: { register: boolean }) {
+  const returnTo = safeReturn(
+    new URLSearchParams(location.search).get("returnTo"),
+  );
+  const router = useRouter(),
+    dialogRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
+  const [validation, setValidation] = useState("");
   const mutation = useMutation({
     mutationFn: async (body: Record<string, FormDataEntryValue>) =>
       (await api.post<LoginResult>(register ? "/register" : "/login", body))
         .data,
     onSuccess: async (result) => {
       await queryClient.cancelQueries();
-      queryClient.clear();
+      // Keep the session Query instance so mounted guards and sockets observe
+      // the new identity during SPA navigation. Drop only owner-scoped caches.
+      await clearPrivateData();
+      queryClient.removeQueries({
+        predicate: (query) =>
+          ["guest-cart", "guest-quote"].includes(String(query.queryKey[0])),
+      });
       localStorage.setItem("jungle-token", result.token);
       queryClient.setQueryData(["session"], {
         user: result.user,
         expiresAt: result.expiresAt,
       });
-      window.location.assign(
-        safeReturn(new URLSearchParams(location.search).get("returnTo")),
-      );
+      await router.navigate({ href: returnTo });
     },
   });
-  const submit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    mutation.mutate(Object.fromEntries(new FormData(e.currentTarget)));
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setValidation("");
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    if (register && data.password !== data.confirmPassword) {
+      setValidation("A confirmação da senha não corresponde.");
+      return;
+    }
+    mutation.mutate(data);
   };
   return (
-    <section className="auth-page">
-      <p className="eyebrow">YOUR COLLECTION STARTS HERE</p>
-      <h1>{register ? "Crie sua conta" : "Bem-vindo de volta"}</h1>
-      {session ? (
-        <>
-          <p>Você está conectado como {session.user.name}.</p>
-          <Link to="/account">Ir para minha conta</Link>
-        </>
-      ) : (
-        <form onSubmit={submit} className="form">
-          {register && (
-            <Field name="name" label="Nome completo" minLength={2} />
-          )}
-          <Field name="email" label="E-mail" type="email" />
-          <Field name="password" label="Senha" type="password" minLength={8} />
-          <ErrorNotice error={mutation.error} />
-          <Button disabled={mutation.isPending}>
-            {mutation.isPending
-              ? "Aguarde…"
-              : register
-                ? "Criar conta"
-                : "Entrar"}
-          </Button>
-        </form>
-      )}
-      <p>
-        {register ? "Já tem uma conta?" : "Ainda não tem uma conta?"}{" "}
-        <Link
-          to={register ? "/login" : "/register"}
-          search={{
-            returnTo: safeReturn(
-              new URLSearchParams(location.search).get("returnTo"),
-            ),
+    <>
+      <MarketplaceCatalog
+        search={authCatalog}
+        onChange={(patch) =>
+          router.navigate({
+            to: "/",
+            search: { ...authCatalog, ...patch, page: 1 },
+          })
+        }
+      />
+      <Dialog
+        open
+        onOpenChange={(open) => {
+          if (!open) void router.navigate({ to: "/", search: authCatalog });
+        }}
+      >
+        <DialogContent
+          className="auth-dialog"
+          ref={dialogRef}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (["/login", "/register"].includes(location.pathname)) return;
+            document
+              .querySelector<HTMLAnchorElement>(
+                '.account-nav a[href^="/login"]',
+              )
+              ?.focus();
+          }}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            dialogRef.current
+              ?.querySelector<HTMLInputElement>("input")
+              ?.focus();
           }}
         >
-          {register ? "Entrar" : "Cadastre-se"}
-        </Link>
-      </p>
-      <aside className="notice">
-        Conta de demonstração: alex@example.test · senha Jungle123!
-      </aside>
-    </section>
+          <DialogTitle className="sr-only">
+            {register ? "Crie sua conta" : "Bem-vindo de volta"}
+          </DialogTitle>
+          <nav className="auth-tabs" aria-label="Acesso à conta">
+            <Link
+              to="/login"
+              search={{ returnTo }}
+              aria-current={!register ? "page" : undefined}
+            >
+              Entrar
+            </Link>
+            <Link
+              to="/register"
+              search={{ returnTo }}
+              aria-current={register ? "page" : undefined}
+            >
+              Criar conta
+            </Link>
+          </nav>
+          <DialogDescription>
+            {register
+              ? "Crie seu perfil de colecionador e comece sua coleção."
+              : "Entre para gerenciar suas carteiras, coleção e perfil de colecionador."}
+          </DialogDescription>
+          {session ? (
+            <div className="auth-signed-in">
+              <p>Você está conectado como {session.user.name}.</p>
+              <Button asChild>
+                <Link to="/account">Ir para minha conta</Link>
+              </Button>
+            </div>
+          ) : (
+            <form
+              key={register ? "register" : "login"}
+              onSubmit={submit}
+              className="form auth-form"
+            >
+              {register && (
+                <>
+                  <Field name="name" label="Nome completo" minLength={2} />
+                  <Field
+                    name="username"
+                    label="Nome de usuário"
+                    minLength={3}
+                  />
+                </>
+              )}
+              <Field name="email" label="E-mail" type="email">
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                />
+              </Field>
+              <PasswordField
+                name="password"
+                label="Senha"
+                autoComplete={register ? "new-password" : "current-password"}
+                minLength={8}
+              />
+              {register && (
+                <PasswordField
+                  name="confirmPassword"
+                  label="Confirmar senha"
+                  autoComplete="new-password"
+                  minLength={8}
+                />
+              )}
+              {validation && (
+                <p className="form-error" role="alert">
+                  {validation}
+                </p>
+              )}
+              <ErrorNotice error={mutation.error} />
+              <Button disabled={mutation.isPending}>
+                {mutation.isPending
+                  ? "Aguarde…"
+                  : register
+                    ? "Criar conta"
+                    : "Entrar"}
+              </Button>
+            </form>
+          )}
+          <div className="auth-social">
+            <p>Ou continue com</p>
+            <button disabled>Continuar com Google</button>
+            <button disabled>Continuar com Facebook</button>
+            <small>Login social indisponível nesta demonstração.</small>
+          </div>
+          <aside className="auth-demo">
+            Conta de demonstração:
+            <br />
+            alex@example.test · senha Jungle123!
+          </aside>
+          <DialogClose
+            className="dialog-close"
+            aria-label="Fechar acesso à conta"
+          >
+            <X size={18} />
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 export function PurchaseControls({ nft }: { nft: Nft }) {
@@ -232,6 +383,7 @@ export function PurchaseControls({ nft }: { nft: Nft }) {
     [quantity, setQuantity] = useState(1),
     [notice, setNotice] = useState("");
   const cart = useCart();
+  const token = localStorage.getItem("jungle-token");
   const mutation = useMutation({
     mutationFn: async () => {
       const old =
@@ -247,6 +399,7 @@ export function PurchaseControls({ nft }: { nft: Nft }) {
       ).data;
     },
     onSuccess: (data) => {
+      if (localStorage.getItem("jungle-token") !== token) return;
       queryClient.setQueryData(cart.queryKey, data);
       setNotice("NFT adicionado ao carrinho.");
     },
@@ -322,141 +475,222 @@ function Totals({ quote }: { quote: Quote }) {
     </dl>
   );
 }
+function QuoteItems({ quote }: { quote: Quote }) {
+  return (
+    <ul className="checkout-items">
+      {quote.items.map((item) => (
+        <li key={item.nftId + item.edition}>
+          <Artwork src={item.image} alt="" sizes="64px" />
+          <div>
+            <strong>{item.name}</strong>
+            <small>
+              {item.quantity} × {item.edition}
+            </small>
+          </div>
+          <b>{eth(wei(item.unitPrice) * BigInt(item.quantity))} ETH</b>
+        </li>
+      ))}
+    </ul>
+  );
+}
+function CouponForm({ cart }: { cart: ReturnType<typeof useCart> }) {
+  const [coupon, setCoupon] = useState("");
+  const token = localStorage.getItem("jungle-token");
+  const mutation = useMutation({
+    mutationFn: async (value: string) =>
+      (await api.patch("/cart", { coupon: value })).data,
+    onSuccess: (data) => {
+      if (localStorage.getItem("jungle-token") === token)
+        queryClient.setQueryData(cart.queryKey, data);
+    },
+  });
+  return (
+    <div className="coupon-panel">
+      <form
+        className="coupon-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          mutation.mutate(coupon);
+        }}
+      >
+        <label className="field">
+          Cupom
+          <input
+            value={coupon}
+            onChange={(event) => setCoupon(event.target.value)}
+            placeholder="Código promocional"
+          />
+        </label>
+        <Button variant="outline" disabled={mutation.isPending}>
+          Aplicar cupom
+        </Button>
+      </form>
+      {cart.data?.coupon && (
+        <p className="coupon-applied">
+          Cupom {cart.data.coupon} aplicado.{" "}
+          <button
+            className="text-button"
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate("")}
+          >
+            Remover cupom
+          </button>
+        </p>
+      )}
+      <ErrorNotice error={mutation.error} />
+    </div>
+  );
+}
 export function CartPage() {
   const cart = useCart(),
-    [coupon, setCoupon] = useState("");
+    token = localStorage.getItem("jungle-token");
   const mutation = useMutation({
     mutationFn: async (body: Record<string, unknown>) =>
       (await api.patch("/cart", body)).data,
     onSuccess: (data) => {
-      queryClient.setQueryData(cart.queryKey, data);
-      void queryClient.invalidateQueries({ queryKey: ["quote"] });
+      if (localStorage.getItem("jungle-token") === token)
+        queryClient.setQueryData(cart.queryKey, data);
     },
   });
-  const quote = useQuery({
-    queryKey:
-      cart.owner === "guest"
-        ? ["guest-quote", cart.data?.version]
-        : ["private", cart.owner, "quote", cart.data?.version],
-    enabled: !!cart.data?.items.length,
-    queryFn: async () => (await api.post<Quote>("/quote", {})).data,
-    retry: false,
-  });
+  const quote = useCartQuote(cart);
   if (cart.isPending)
     return (
-      <section>
+      <section className="commerce-page">
         <h1>Seu carrinho</h1>
         <Loading />
       </section>
     );
   if (cart.isError)
     return (
-      <section>
+      <section className="commerce-page">
         <ErrorNotice error={cart.error} />
         <Button onClick={() => void cart.refetch()}>Tentar novamente</Button>
       </section>
     );
   return (
-    <section>
-      <p className="eyebrow">YOUR NEXT COLLECTIBLE</p>
+    <section className="commerce-page cart-page">
+      <Breadcrumb current="Carrinho" />
       <h1>Seu carrinho</h1>
       {!cart.data?.items.length ? (
         <div className="empty">
           <h2>Seu carrinho está vazio.</h2>
-          <a href="/">Explorar NFTs →</a>
+          <Link to="/" search={authCatalog}>
+            Explorar NFTs →
+          </Link>
         </div>
       ) : (
-        <div className="commerce-grid">
+        <div className="commerce-grid cart-layout">
           <div>
+            <div className="cart-row-heading" aria-hidden="true">
+              <span>NFTs</span>
+              <span>Preço</span>
+              <span>Edições</span>
+              <span>Total</span>
+              <span />
+            </div>
             {cart.data.items.map((item) => (
-              <article
-                className="cart-line"
-                key={`${item.nftId}-${item.edition}`}
-              >
-                <img src={item.nft.image} alt={item.nft.name} />
-                <div>
-                  <Link to="/nft/$id" params={{ id: item.nftId }}>
+              <article className="cart-line" key={item.nftId + item.edition}>
+                <Link
+                  to="/nft/$id"
+                  params={{ id: item.nftId }}
+                  className="cart-identity"
+                >
+                  <Artwork src={item.nft.image} alt="" sizes="64px" />
+                  <div>
                     <h3>{item.nft.name}</h3>
-                  </Link>
-                  <p>
-                    {item.edition} · {item.unitPrice} ETH / unidade
-                  </p>
-                  <label>
+                    <small>
+                      ID do token: {item.nftId} · {item.edition}
+                    </small>
+                  </div>
+                </Link>
+                <div className="cart-unit">
+                  <span className="mobile-label">Preço</span>
+                  {item.unitPrice} ETH
+                </div>
+                <div className="cart-quantity">
+                  <label
+                    htmlFor={"quantity-" + item.nftId + item.edition}
+                    className="sr-only"
+                  >
                     Quantidade de {item.nft.name}
-                    <input
-                      aria-label={`Quantidade de ${item.nft.name}`}
-                      type="number"
-                      value={item.quantity}
-                      min={1}
-                      max={item.available}
-                      disabled={mutation.isPending}
-                      onChange={(e) => {
-                        const quantity = Number(e.target.value);
-                        if (Number.isInteger(quantity) && quantity > 0)
-                          mutation.mutate({
-                            nftId: item.nftId,
-                            edition: item.edition,
-                            quantity,
-                          });
-                      }}
-                    />
                   </label>
-                  {item.quantity > item.available && (
-                    <p role="alert">
-                      Disponibilidade alterada: restam {item.available}. Ajuste
-                      ou remova este item.
-                    </p>
-                  )}
                   <button
-                    className="text-button"
-                    disabled={mutation.isPending}
+                    aria-label={"Diminuir quantidade de " + item.nft.name}
+                    disabled={mutation.isPending || item.quantity <= 1}
                     onClick={() =>
                       mutation.mutate({
                         nftId: item.nftId,
                         edition: item.edition,
-                        quantity: 0,
+                        quantity: item.quantity - 1,
                       })
                     }
                   >
-                    Remover {item.nft.name}
+                    <Minus size={12} />
+                  </button>
+                  <input
+                    id={"quantity-" + item.nftId + item.edition}
+                    type="number"
+                    value={item.quantity}
+                    min={1}
+                    max={item.available}
+                    disabled={mutation.isPending}
+                    onChange={(event) => {
+                      const quantity = Number(event.target.value);
+                      if (Number.isInteger(quantity) && quantity > 0)
+                        mutation.mutate({
+                          nftId: item.nftId,
+                          edition: item.edition,
+                          quantity,
+                        });
+                    }}
+                  />
+                  <button
+                    aria-label={"Aumentar quantidade de " + item.nft.name}
+                    disabled={
+                      mutation.isPending || item.quantity >= item.available
+                    }
+                    onClick={() =>
+                      mutation.mutate({
+                        nftId: item.nftId,
+                        edition: item.edition,
+                        quantity: item.quantity + 1,
+                      })
+                    }
+                  >
+                    <Plus size={12} />
                   </button>
                 </div>
+                <div className="cart-line-total">
+                  <span className="mobile-label">Total</span>
+                  {eth(wei(item.unitPrice) * BigInt(item.quantity))} ETH
+                </div>
+                <button
+                  className="remove-cart-item"
+                  aria-label={"Remover " + item.nft.name}
+                  disabled={mutation.isPending}
+                  onClick={() =>
+                    mutation.mutate({
+                      nftId: item.nftId,
+                      edition: item.edition,
+                      quantity: 0,
+                    })
+                  }
+                >
+                  <Trash2 size={17} />
+                </button>
+                {item.quantity > item.available && (
+                  <p className="stock-warning" role="alert">
+                    Disponibilidade alterada: restam {item.available}. Ajuste ou
+                    remova este item.
+                  </p>
+                )}
               </article>
             ))}
-            <form
-              className="coupon-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                mutation.mutate({ coupon });
-              }}
-            >
-              <label className="field">
-                Cupom
-                <input
-                  value={coupon}
-                  onChange={(e) => setCoupon(e.target.value)}
-                  placeholder="JUNGLE10"
-                />
-              </label>
-              <Button variant="outline" disabled={mutation.isPending}>
-                Aplicar cupom
-              </Button>
-            </form>
-            {cart.data.coupon && (
-              <p>
-                Cupom {cart.data.coupon} aplicado.{" "}
-                <button
-                  className="text-button"
-                  onClick={() => mutation.mutate({ coupon: "" })}
-                >
-                  Remover cupom
-                </button>
-              </p>
-            )}
             <ErrorNotice error={mutation.error} />
           </div>
-          <aside className="summary">
-            <h2>Resumo</h2>
+          <aside className="summary cart-summary">
+            <h2>Resumo da carteira</h2>
+            <CouponForm cart={cart} />
             {quote.isPending ? (
               <Loading label="Carregando resumo" />
             ) : quote.data ? (
@@ -471,10 +705,14 @@ export function CartPage() {
             ) : (
               <Button disabled>Ir para pagamento</Button>
             )}
+            <Link className="continue-shopping" to="/" search={authCatalog}>
+              Continuar explorando
+            </Link>
             <p className="muted">A cotação será revalidada antes da compra.</p>
           </aside>
         </div>
       )}
+      <RelatedNfts exclude={cart.data?.items.map((item) => item.nftId)} />
     </section>
   );
 }
@@ -487,18 +725,24 @@ interface Attempt {
     connected: boolean;
     name: string;
     email: string;
+    note?: string;
   };
 }
 export function CheckoutPage() {
   const { data: session } = useSession(),
     cart = useCart(),
     wallets = useWallets();
+  const previewQuote = useCartQuote(cart),
+    profile = useProfile(),
+    token = localStorage.getItem("jungle-token");
   const [walletId, setWalletId] = useState(""),
+    [network, setNetwork] = useState(""),
     [connected, setConnected] = useState(false),
     [connectionError, setConnectionError] = useState(""),
     [review, setReview] = useState<Quote | null>(null),
-    [collector, setCollector] = useState({ name: "", email: "" });
+    [collector, setCollector] = useState({ name: "", email: "", note: "" });
   const busy = useRef(false);
+  const revision = useRef(0);
   const attemptKey = `jungle-attempt:${session?.user.id}`;
   const [attempt, setAttempt] = useState<Attempt | null>(() => {
     try {
@@ -510,10 +754,6 @@ export function CheckoutPage() {
   const [changed, setChanged] = useState(false);
   const quote = useMutation({
     mutationFn: async () => (await api.post<Quote>("/quote", {})).data,
-    onSuccess: (data) => {
-      setReview(data);
-      setChanged(false);
-    },
   });
   const order = useMutation({
     mutationFn: async (value: Attempt) =>
@@ -523,6 +763,11 @@ export function CheckoutPage() {
         })
       ).data,
     onSuccess: (result) => {
+      if (
+        localStorage.getItem("jungle-token") !== token ||
+        result.userId !== session?.user.id
+      )
+        return;
       sessionStorage.removeItem(attemptKey);
       setAttempt(null);
       window.location.assign(`/orders/${result.id}`);
@@ -542,22 +787,45 @@ export function CheckoutPage() {
     },
   });
   const selected = wallets.data?.find((w) => w.id === walletId);
-  const reviewOrder = (e: FormEvent<HTMLFormElement>) => {
+  const reviewOrder = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     setCollector({
       name: String(form.get("name")),
       email: String(form.get("email")),
+      note: String(form.get("note") || ""),
     });
-    quote.mutate();
+    const requestedRevision = revision.current;
+    const data = await quote.mutateAsync().catch(() => null);
+    if (
+      data &&
+      requestedRevision === revision.current &&
+      localStorage.getItem("jungle-token") === token
+    ) {
+      setReview(data);
+      setChanged(false);
+    }
   };
   const submit = async () => {
-    if (busy.current || order.isPending || !review || !selected || !connected)
+    if (
+      busy.current ||
+      order.isPending ||
+      !review ||
+      !selected ||
+      !connected ||
+      network !== selected.network
+    )
       return;
     busy.current = true;
+    const requestedRevision = revision.current;
     try {
       const fresh = await quote.mutateAsync().catch(() => null);
       if (!fresh) return;
+      if (
+        requestedRevision !== revision.current ||
+        localStorage.getItem("jungle-token") !== token
+      )
+        return;
       if (
         JSON.stringify([fresh.items, fresh.total, fresh.cartVersion]) !==
         JSON.stringify([review.items, review.total, review.cartVersion])
@@ -571,7 +839,7 @@ export function CheckoutPage() {
         body: {
           quoteId: fresh.id,
           walletId: selected.id,
-          network: selected.network,
+          network,
           connected,
           ...collector,
         },
@@ -590,9 +858,10 @@ export function CheckoutPage() {
         <Loading />
       </section>
     );
+  const displayQuote = review || previewQuote.data;
   return (
-    <section>
-      <p className="eyebrow">ALMOST YOURS</p>
+    <section className="commerce-page checkout-page">
+      <Breadcrumb current="Pagamento" />
       <h1>Pagamento</h1>
       {attempt ? (
         <div className="summary">
@@ -611,24 +880,46 @@ export function CheckoutPage() {
         </div>
       ) : !cart.data?.items.length ? (
         <p>
-          Seu carrinho está vazio. <a href="/">Voltar ao catálogo</a>
+          Seu carrinho está vazio.{" "}
+          <Link to="/" search={authCatalog}>
+            Voltar ao catálogo
+          </Link>
         </p>
       ) : (
-        <div className="commerce-grid">
-          <form className="form" onSubmit={reviewOrder}>
-            <h2>Dados do colecionador</h2>
+        <div className="commerce-grid checkout-layout">
+          <form
+            className="form checkout-form"
+            onSubmit={reviewOrder}
+            onChange={() => {
+              revision.current++;
+              setReview(null);
+            }}
+          >
+            <h2>Perfil do colecionador</h2>
             <Field
               name="name"
               label="Nome completo"
               defaultValue={session?.user.name}
               minLength={2}
             />
+            <label className="field">
+              Nome de usuário
+              <input value={profile.data?.username || ""} readOnly />
+            </label>
             <Field
               name="email"
               label="E-mail"
               type="email"
               defaultValue={session?.user.email}
             />
+            <label className="field">
+              Nome ENS (opcional)
+              <input
+                value={profile.data?.ens || ""}
+                readOnly
+                placeholder="Não informado"
+              />
+            </label>
             <h2>Carteira e rede</h2>
             {wallets.data?.length ? (
               <>
@@ -637,16 +928,21 @@ export function CheckoutPage() {
                   <select
                     required
                     value={walletId}
-                    onChange={(e) => {
-                      setWalletId(e.target.value);
+                    onChange={(event) => {
+                      const id = event.target.value;
+                      setWalletId(id);
+                      setNetwork(
+                        wallets.data.find((w) => w.id === id)?.network || "",
+                      );
                       setConnected(false);
                       setReview(null);
+                      setConnectionError("");
                     }}
                   >
                     <option value="">Selecione sua carteira</option>
-                    {wallets.data.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.label} · {w.network}
+                    {wallets.data.map((wallet) => (
+                      <option key={wallet.id} value={wallet.id}>
+                        {wallet.label} · {wallet.network}
                       </option>
                     ))}
                   </select>
@@ -656,21 +952,35 @@ export function CheckoutPage() {
                     <label className="field">
                       Rede
                       <select
-                        value={selected.network}
-                        onChange={() => {
+                        value={network}
+                        onChange={(event) => {
+                          setNetwork(event.target.value);
                           setConnected(false);
                           setReview(null);
+                          setConnectionError("");
                         }}
                       >
-                        <option>{selected.network}</option>
+                        <option>Ethereum</option>
+                        <option>Polygon</option>
                       </select>
                     </label>
-                    <p className="wallet-address">{selected.address}</p>
-                    <div className="wallet-actions">
+                    <label className="field checkout-address">
+                      Endereço da carteira
+                      <input value={selected.address} readOnly />
+                    </label>
+                    {network !== selected.network && (
+                      <p className="form-error full-row" role="alert">
+                        Rede incompatível. Selecione {selected.network} para
+                        esta carteira.
+                      </p>
+                    )}
+                    <div className="wallet-actions full-row">
                       <Button
                         type="button"
                         variant="outline"
+                        disabled={network !== selected.network}
                         onClick={() => {
+                          revision.current++;
                           setConnected(!connected);
                           setConnectionError("");
                           setReview(null);
@@ -685,17 +995,19 @@ export function CheckoutPage() {
                           type="button"
                           className="text-button"
                           onClick={() => {
+                            revision.current++;
                             setConnectionError(
                               "Conexão recusada pelo usuário. Tente novamente.",
                             );
                             setConnected(false);
+                            setReview(null);
                           }}
                         >
                           Simular recusa de conexão
                         </button>
                       )}
                     </div>
-                    <p role="status">
+                    <p className="full-row muted" role="status">
                       {connected
                         ? "Carteira conectada na simulação."
                         : connectionError}
@@ -704,43 +1016,58 @@ export function CheckoutPage() {
                 )}
               </>
             ) : (
-              <p>
+              <p className="full-row">
                 Cadastre uma carteira antes de continuar.{" "}
                 <Link to="/wallets">Gerenciar carteiras →</Link>
               </p>
             )}
-            <ErrorNotice error={wallets.error} />
-            <ErrorNotice error={quote.error} />
-            <Button disabled={!connected || quote.isPending || order.isPending}>
+            <label className="field full-row">
+              Observação do colecionador (opcional)
+              <textarea name="note" maxLength={500} rows={4} />
+            </label>
+            <div className="full-row">
+              <ErrorNotice error={wallets.error} />
+              <ErrorNotice error={quote.error} />
+            </div>
+            <Button
+              className="full-row review-button"
+              disabled={!connected || quote.isPending || order.isPending}
+            >
               {quote.isPending ? "Validando…" : "Revisar pedido"}
             </Button>
           </form>
-          <aside className="summary">
-            <h2>Revisão do pedido</h2>
+          <aside className="summary checkout-summary">
+            <h2>Seus NFTs</h2>
             {(changed ||
               !!(
                 review &&
                 cart.data &&
                 review.cartVersion !== cart.data.version
               )) && (
-              <p role="alert">
+              <p role="alert" className="form-error">
                 Os valores ou itens mudaram. Confira a cotação e confirme
                 novamente.
               </p>
             )}
+            {displayQuote ? (
+              <>
+                <QuoteItems quote={displayQuote} />
+                <CouponForm cart={cart} />
+                <Totals quote={displayQuote} />
+              </>
+            ) : previewQuote.isPending ? (
+              <Loading label="Carregando resumo" />
+            ) : (
+              <ErrorNotice error={previewQuote.error} />
+            )}
             {review ? (
               <>
-                <ul className="order-items">
-                  {review.items.map((i) => (
-                    <li key={`${i.nftId}-${i.edition}`}>
-                      {i.quantity} × {i.name} · {i.edition}
-                    </li>
-                  ))}
-                </ul>
-                <Totals quote={review} />
-                <p>
+                <p className="muted">
                   {collector.name} · {collector.email}
                 </p>
+                {collector.note && (
+                  <p className="collector-note">{collector.note}</p>
+                )}
                 <Button
                   disabled={
                     order.isPending ||
@@ -754,7 +1081,9 @@ export function CheckoutPage() {
                 </Button>
               </>
             ) : (
-              <p>Revise os dados para consultar o valor final.</p>
+              <p className="muted">
+                Revise os dados para confirmar o valor final.
+              </p>
             )}
             <ErrorNotice error={order.error} />
           </aside>
@@ -807,52 +1136,80 @@ export function OrderPage() {
   const order = query.data;
   return (
     <section className="receipt">
-      <p className="eyebrow">YOUR COLLECTION</p>
-      <h1>
-        {order.status === "confirmed"
-          ? "Compra confirmada"
-          : order.status === "declined"
-            ? "Pagamento recusado"
-            : "Pedido em processamento"}
-      </h1>
-      <p role="status">
-        {order.status === "pending"
-          ? "Estamos aguardando o resultado da simulação. Você pode atualizar esta página com segurança."
-          : order.status === "declined"
-            ? order.reason
-            : "Seu pedido foi confirmado pela API simulada."}
-      </p>
-      <div className="summary">
-        <p className="wallet-address">Pedido {order.id}</p>
-        {order.status === "confirmed" && (
-          <p className="wallet-address">
-            Transação simulada: {order.transaction}
-          </p>
-        )}
-        <ul className="order-items">
-          {order.quote.items.map((i) => (
-            <li key={`${i.nftId}-${i.edition}`}>
-              <img src={i.image} alt="" />
-              {i.quantity} × {i.name} · {i.edition} · {i.unitPrice} ETH
-            </li>
-          ))}
-        </ul>
+      <article className="receipt-card">
+        <div className="receipt-symbol" aria-hidden="true">
+          {order.status === "confirmed" ? (
+            <BadgeCheck size={48} />
+          ) : order.status === "declined" ? (
+            <CircleX size={48} />
+          ) : (
+            <Clock3 size={48} />
+          )}
+        </div>
+        <h1>
+          {order.status === "confirmed"
+            ? "Compra confirmada"
+            : order.status === "declined"
+              ? "Pagamento recusado"
+              : "Pedido em processamento"}
+        </h1>
+        <p className="receipt-status" role="status">
+          {order.status === "pending"
+            ? "Estamos aguardando o resultado da simulação. Você pode atualizar esta página com segurança."
+            : order.status === "declined"
+              ? order.reason
+              : "Compra simulada confirmada. Seus NFTs já aparecem no histórico."}
+        </p>
+        <dl className="receipt-metadata">
+          <div>
+            <dt>Pedido</dt>
+            <dd className="receipt-code">{order.id}</dd>
+          </div>
+          <div>
+            <dt>Data</dt>
+            <dd>
+              <time
+                className="receipt-date"
+                dateTime={new Date(order.createdAt).toISOString()}
+              >
+                {new Intl.DateTimeFormat("pt-BR", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                }).format(order.createdAt)}
+              </time>
+            </dd>
+          </div>
+          <div>
+            <dt>Carteira</dt>
+            <dd>
+              {order.wallet.label} · {order.wallet.network}
+            </dd>
+          </div>
+          {order.transaction && (
+            <div className="receipt-transaction">
+              <dt>Transação simulada</dt>
+              <dd className="receipt-code">{order.transaction}</dd>
+            </div>
+          )}
+        </dl>
+        <h2>Detalhes da compra</h2>
+        <QuoteItems quote={order.quote} />
         <Totals quote={order.quote} />
-        <p>
+        <p className="muted">
           {order.collector.name} · {order.collector.email}
         </p>
-        <p>
-          {order.wallet.label} · {order.wallet.network}
-        </p>
-      </div>
-      {order.status === "declined" && (
-        <Button asChild>
-          <Link to="/cart">Voltar ao carrinho</Link>
-        </Button>
-      )}
-      <p>
-        <Link to="/account">Meus pedidos →</Link>
-      </p>
+        {order.collector.note && (
+          <p className="collector-note">{order.collector.note}</p>
+        )}
+        {order.status === "declined" && (
+          <Button asChild>
+            <Link to="/cart">Voltar ao carrinho</Link>
+          </Button>
+        )}
+        <Link className="receipt-account" to="/account">
+          Meus pedidos →
+        </Link>
+      </article>
     </section>
   );
 }

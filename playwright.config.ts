@@ -4,7 +4,7 @@ export default defineConfig({
   expect: { timeout: 15000 },
   testDir: "./tests",
   fullyParallel: true,
-  workers: 2,
+  workers: Math.max(1, Number(process.env.PW_WORKERS) || 1),
   reporter: [["html", { open: "never" }], ["list"]],
   use: { baseURL: "http://127.0.0.1:4173", trace: "retain-on-failure" },
   webServer: {

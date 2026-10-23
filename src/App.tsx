@@ -7,19 +7,20 @@ import {
   Outlet,
   redirect,
   useRouter,
+  useRouterState,
 } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { isAxiosError } from "axios";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight } from "lucide-react";
-import { Artwork } from "./components/artwork";
+import { Breadcrumb } from "./components/breadcrumb";
+import { DetailGallery } from "./features/detail-gallery";
+import { RelatedNfts } from "./features/related-nfts";
+import { MarketplaceFooter } from "./features/marketplace";
 import {
-  Hero,
-  CatalogFilters,
-  CatalogToolbar,
-  MarketplaceFooter,
-} from "./features/marketplace";
-import type { Catalog, CatalogSearch, Nft } from "./domain";
+  MarketplaceCatalog,
+  CatalogSkeleton as Skeleton,
+} from "./features/catalog";
+import type { CatalogSearch, Nft } from "./domain";
 import { api, errorMessage, queryClient, sessionOptions } from "./lib/api";
 import { Button } from "./components/ui/button";
 
@@ -39,6 +40,10 @@ import { Realtime } from "./features/realtime";
 import { FavoriteButton } from "./features/collector";
 
 function Layout() {
+  const path = useRouterState({ select: (state) => state.location.pathname });
+  const market = ["/nft/", "/cart", "/checkout", "/orders/"].some((prefix) =>
+    path.startsWith(prefix),
+  );
   return (
     <>
       <a className="skip" href="#main">
@@ -56,10 +61,17 @@ function Layout() {
           <Link
             to="/"
             search={{ q: "", category: "", sort: "recent", page: 1 }}
+            data-active={!market}
           >
             Início
           </Link>
-          <a href="/#catalog">Mercado</a>
+          <a
+            href="/#catalog"
+            data-active={market}
+            aria-current={market ? "location" : undefined}
+          >
+            Mercado
+          </a>
           <a href="/#about-kurio">Sobre a Kurio</a>
         </nav>
         <AccountNavigation />
@@ -73,147 +85,16 @@ function Layout() {
     </>
   );
 }
-function Skeleton() {
-  return (
-    <div className="grid" role="status" aria-label="Carregando catálogo">
-      {Array.from({ length: 9 }, (_, i) => (
-        <div className="skeleton" key={i} />
-      ))}
-    </div>
-  );
-}
 function CatalogPage() {
   const search = catalogRoute.useSearch();
   const navigate = catalogRoute.useNavigate();
-  const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ["nfts", search],
-    queryFn: async ({ signal }) =>
-      (await api.get<Catalog>("/nfts", { params: search, signal })).data,
-  });
-  const change = (patch: Partial<CatalogSearch>) =>
-    navigate({ search: (prev) => ({ ...prev, page: 1, ...patch }) });
   return (
-    <>
-      <Hero />
-      <section id="catalog" className="marketplace-catalog">
-        <CatalogFilters
-          key={`${search.minPrice}:${search.maxPrice}`}
-          search={search}
-          change={change}
-        />
-        <div className="catalog-results">
-          <CatalogToolbar search={search} change={change} />
-          {isPending ? (
-            <Skeleton />
-          ) : isError ? (
-            <div role="alert" className="empty">
-              <h3>Não foi possível carregar o catálogo.</h3>
-              <Button onClick={() => void refetch()}>Tentar novamente</Button>
-            </div>
-          ) : (
-            <>
-              <p className="count" aria-live="polite">
-                {data.total}{" "}
-                {data.total === 1 ? "obra encontrada" : "obras encontradas"}
-              </p>
-              {data.items.length === 0 ? (
-                <div className="empty">
-                  <h3>Nenhuma obra encontrada</h3>
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      void change({
-                        q: "",
-                        category: "",
-                        minPrice: "",
-                        maxPrice: "",
-                      })
-                    }
-                  >
-                    Limpar filtros
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid">
-                  {data.items.map((n) => (
-                    <Link
-                      to="/nft/$id"
-                      params={{ id: n.id }}
-                      className="card"
-                      key={n.id}
-                    >
-                      <Artwork
-                        src={n.image}
-                        alt={n.name}
-                        loading="lazy"
-                        width="600"
-                        height="600"
-                      />
-                      <div>
-                        <h3>{n.name}</h3>
-                        <p>
-                          <b>{n.price} ETH</b>
-                          <span>
-                            {n.stock ? "" : "Esgotado"}{" "}
-                            <ArrowUpRight size={16} />
-                          </span>
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-              {data.pages > 1 && (
-                <nav className="pagination" aria-label="Paginação">
-                  <Button
-                    variant="outline"
-                    disabled={search.page <= 1}
-                    onClick={() => void change({ page: search.page - 1 })}
-                  >
-                    Anterior
-                  </Button>
-                  <span>
-                    {search.page} / {data.pages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    disabled={search.page >= data.pages}
-                    onClick={() => void change({ page: search.page + 1 })}
-                  >
-                    Próxima
-                  </Button>
-                </nav>
-              )}
-            </>
-          )}
-        </div>
-      </section>
-      <section id="about-kurio" className="collection-story">
-        <div>
-          <p className="eyebrow">UM NOVO UNIVERSO CRIATIVO</p>
-          <h2>
-            Arte digital selecionada.
-            <br />
-            Possibilidades extraordinárias.
-          </h2>
-          <p>
-            Uma coleção de personagens, perspectivas e histórias. Encontre a
-            peça que combina com a sua.
-          </p>
-          <Button asChild>
-            <a href="#catalog">
-              CONHECER A COLEÇÃO <ArrowUpRight size={16} />
-            </a>
-          </Button>
-        </div>
-        <Artwork
-          src="/artwork/kurio/ape-4-480.webp"
-          alt="Ape dourado com fones de ouvido"
-          loading="lazy"
-          sizes="(max-width: 700px) 85vw, 350px"
-        />
-      </section>
-    </>
+    <MarketplaceCatalog
+      search={search}
+      onChange={(patch) =>
+        navigate({ search: (prev) => ({ ...prev, page: 1, ...patch }) })
+      }
+    />
   );
 }
 function DetailPage() {
@@ -243,27 +124,51 @@ function DetailPage() {
     );
   const n = query.data;
   return (
-    <section>
-      <Link to="/" search={{ q: "", category: "", sort: "recent", page: 1 }}>
-        Início / Mercado
-      </Link>
+    <section className="nft-page">
+      <Breadcrumb current={n.name} />
       <div className="detail">
-        <Artwork
-          src={n.image}
-          alt={n.name}
-          sizes="(max-width: 700px) 90vw, 550px"
-          fetchPriority="high"
-        />
+        <DetailGallery key={n.id} nft={n} />
         <div>
           <p className="eyebrow">{n.category}</p>
           <h1>{n.name}</h1>
           <p>Criado por {n.creator}</p>
+          <p className="nft-intro">
+            Uma peça da coleção Kurio Editions. Explore seus detalhes e escolha
+            uma edição para a sua coleção.
+          </p>
           <h2>{n.price} ETH</h2>
           <p>{n.stock} edições disponíveis</p>
           <FavoriteButton id={n.id} name={n.name} />
           <PurchaseControls nft={n} />
         </div>
       </div>
+      <div className="nft-description">
+        <h2>Detalhes da obra</h2>
+        <p>
+          Arte digital da coleção Kurio, disponível em edições standard e
+          limited. Preços, disponibilidade e compras fazem parte de uma
+          experiência simulada.
+        </p>
+        <dl>
+          <div>
+            <dt>ID do token</dt>
+            <dd>{n.id}</dd>
+          </div>
+          <div>
+            <dt>Criador</dt>
+            <dd>{n.creator}</dd>
+          </div>
+          <div>
+            <dt>Rede</dt>
+            <dd>Ethereum (simulada)</dd>
+          </div>
+          <div>
+            <dt>Edições disponíveis</dt>
+            <dd>{n.stock}</dd>
+          </div>
+        </dl>
+      </div>
+      <RelatedNfts exclude={[n.id]} />
     </section>
   );
 }
