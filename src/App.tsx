@@ -24,6 +24,7 @@ import { DetailSkeleton } from "./components/detail-skeleton";
 
 import { lazy, Suspense } from "react";
 import { AccountNavigation, SessionGuard } from "./features/session";
+import { mocksReady } from "./lib/mock-ready";
 const LoginPage = lazy(() =>
   import("./features/commerce").then((module) => ({
     default: module.LoginPage,
@@ -60,7 +61,13 @@ function DetailPage() {
   return <DetailContent id={id} />;
 }
 
-import { Realtime } from "./features/realtime";
+const Realtime = lazy(async () => {
+  // Engine.IO captures WebSocket at import time, after MSW installs interception.
+  await mocksReady;
+  return import("./features/realtime").then((module) => ({
+    default: module.Realtime,
+  }));
+});
 
 function Layout() {
   const path = useRouterState({ select: (state) => state.location.pathname });
@@ -110,7 +117,9 @@ function Layout() {
         <AccountNavigation />
       </header>
       <SessionGuard />
-      <Realtime />
+      <Suspense fallback={null}>
+        <Realtime />
+      </Suspense>
       <main
         id="main"
         className={

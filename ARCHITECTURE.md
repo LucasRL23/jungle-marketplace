@@ -4,6 +4,7 @@
 
 - `domain.ts`: contratos entre transporte e UI.
 - `lib/api.ts`: Axios, identificação do visitante, token simulado, tratamento de 401 e QueryClient.
+- `lib/mock-ready.ts`: barreira de inicialização; Axios aguarda MSW antes de enviar requisições.
 - `lib/money.ts`: conversão exata entre ETH decimal e bigint em wei.
 - `mocks/store.ts`: estado persistente da simulação e regras de cotação, reserva e liquidação.
 - `mocks/handlers.ts`: API REST MSW. Componentes e hooks não fornecem respostas fictícias.
@@ -67,7 +68,7 @@ Catálogo: chave inclui todos os parâmetros, staleTime 30s; detalhe inclui id. 
 
 ## Carregamento inicial e performance
 
-O build emite `modulepreload` para os chunks iniciais App/MSW; a fonte local usa o carregamento normal da folha de estilos. O [contrato modulepreload do HTML](https://html.spec.whatwg.org/multipage/links.html#link-type-modulepreload) permite preparar o módulo para execução posterior; o import de App continua após `worker.start()` para preservar a interceptação do Socket.IO. A configuração usa o [hook transformIndexHtml do Vite](https://vite.dev/guide/api-plugin.html#transformindexhtml), com os nomes reais dos arquivos gerados, e está versionada em `vite.config.ts`.
+O build emite `modulepreload` para os chunks iniciais App/MSW; a fonte local usa o carregamento normal da folha de estilos. O [contrato modulepreload do HTML](https://html.spec.whatwg.org/multipage/links.html#link-type-modulepreload) permite preparar o módulo para execução posterior. O shell visual começa enquanto MSW inicializa; o interceptor Axios aguarda a promessa compartilhada de prontidão antes de qualquer requisição. O módulo Realtime é carregado somente depois de `worker.start()`, preservando a interceptação do Socket.IO. A configuração usa o [hook transformIndexHtml do Vite](https://vite.dev/guide/api-plugin.html#transformindexhtml), com os nomes reais dos arquivos gerados, e está versionada em `vite.config.ts`.
 
 As três primeiras imagens do catálogo carregam eager, com prioridade alta para a primeira; demais itens permanecem lazy. Com o banner mobile compacto, o primeiro card aparece na primeira dobra e pode ser o LCP. O srcSet considera a dimensão real das imagens em cada largura. A classe de rota `discovery-page` aplica o layout de início/acesso sem seletores relacionais sobre o conteúdo assíncrono. Essas políticas são usadas no build publicado, com os mesmos mocks, arquivos e funcionalidades auditados.
 
@@ -93,7 +94,7 @@ GET /api/favorites → string[] de ids; PUT/DELETE /api/favorites/:id → lista 
 
 ## Transporte e contratos Socket.IO
 
-`socket.io-client` usa WebSocket no mesmo origin, path `/socket.io`. MSW intercepta a conexão e `@mswjs/socket.io-binding` codifica/decodifica Engine.IO e Socket.IO. O aplicativo é importado depois de `worker.start()`: Engine.IO captura o construtor WebSocket ao importar. Na versão MSW 2.10.2, o matcher normaliza `/socket.io/` para `/`; o handler aponta para a raiz do origin e verifica o path físico para preservar o WebSocket de HMR do Vite. Não há servidor WebSocket externo no deploy de demonstração.
+`socket.io-client` usa WebSocket no mesmo origin, path `/socket.io`. MSW intercepta a conexão e `@mswjs/socket.io-binding` codifica/decodifica Engine.IO e Socket.IO. O módulo Realtime é importado depois de `worker.start()`: Engine.IO captura o construtor WebSocket ao importar. Na versão MSW 2.10.2, o matcher normaliza `/socket.io/` para `/`; o handler aponta para a raiz do origin e verifica o path físico para preservar o WebSocket de HMR do Vite. Não há servidor WebSocket externo no deploy de demonstração.
 
 - `subscribe` cliente → {token:string|null}; o mock autentica a sessão atual.
 - `session.ready` servidor → {connectionId:string}; indica que a subscription foi autenticada (ou visitante).

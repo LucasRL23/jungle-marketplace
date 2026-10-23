@@ -1,8 +1,5 @@
 @import "tailwindcss" source("./");
 :root {
-  font-family: Arial, Helvetica, sans-serif;
-  color: #f7f3ec;
-  background: #151311;
   line-height: 1.5;
   font-synthesis: none;
 }
@@ -30,7 +27,6 @@ select:focus-visible {
 header,
 main,
 footer {
-  max-width: 1320px;
   margin: auto;
 }
 header {
@@ -44,9 +40,6 @@ header {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 26px;
-  font-weight: 900;
-  letter-spacing: -1px;
 }
 header span {
   margin-left: auto;
@@ -58,10 +51,7 @@ nav {
 }
 .hero {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 60px;
   align-items: center;
-  padding: 70px 40px;
 }
 .hero img {
   width: 100%;
@@ -70,15 +60,10 @@ nav {
   border: 1px solid #65503b;
 }
 .eyebrow {
-  color: #f3aa6c;
-  letter-spacing: 3px;
   font-size: 11px;
   font-weight: bold;
 }
 h1 {
-  font-size: clamp(40px, 4.6vw, 64px);
-  line-height: 1.1;
-  letter-spacing: -2px;
   margin: 22px 0;
   font-weight: 500;
 }
@@ -86,18 +71,8 @@ h1 em {
   color: #ffa368;
   font-style: normal;
 }
-.hero div > p:not(.eyebrow) {
-  color: #bdb3a6;
-  max-width: 380px;
-  margin: 25px 0;
-}
-section:not(.hero) {
-  padding: 35px 40px;
-}
 h2 {
-  font-size: 34px;
   font-weight: 500;
-  letter-spacing: -1px;
   margin: 10px 0 25px;
 }
 .filters {
@@ -120,7 +95,6 @@ h2 {
 input,
 select {
   border: 0;
-  background: #151311;
   color: #eee3d7;
   font-size: 13px;
   max-width: 100%;
@@ -136,14 +110,7 @@ input {
   gap: 20px;
 }
 .card {
-  background: #241e19;
-  border: 1px solid #44382c;
-  border-radius: 12px;
   overflow: hidden;
-  transition: transform 0.2s;
-}
-.card:hover {
-  transform: translateY(-4px);
 }
 .card > img {
   display: block;
@@ -152,17 +119,10 @@ input {
   aspect-ratio: 1;
   object-fit: cover;
 }
-.card > div {
-  padding: 18px;
-}
 .card small,
 .count {
   font-size: 11px;
   color: #c3ad96;
-}
-.card h3 {
-  font-size: 17px;
-  margin: 10px 0 20px;
 }
 .card p {
   border-top: 1px solid #44382c;
@@ -171,20 +131,15 @@ input {
   justify-content: space-between;
   padding-top: 16px;
   margin: 0;
-  font-size: 12px;
 }
 .card p span {
   display: flex;
   gap: 6px;
-  color: #c3ad96;
-  font-size: 9px;
 }
 .pagination {
   display: flex;
-  gap: 22px;
   justify-content: center;
   align-items: center;
-  margin: 35px 0;
 }
 .empty {
   text-align: center;
@@ -218,7 +173,6 @@ footer {
 .detail {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 50px;
   margin-top: 30px;
 }
 .detail > img {
@@ -226,8 +180,6 @@ footer {
   border-radius: 16px;
 }
 .notice {
-  padding: 20px;
-  border: 1px solid #65503b;
   color: #c3ad96;
 }
 .skip {
@@ -263,14 +215,6 @@ footer {
   header span {
     display: none;
   }
-  .hero {
-    grid-template-columns: 1fr;
-    padding: 35px 22px;
-    gap: 35px;
-  }
-  .hero h1 {
-    font-size: 46px;
-  }
   section:not(.hero) {
     padding: 30px 22px;
   }
@@ -296,19 +240,10 @@ footer {
     padding: 12px;
   }
   .card h3 {
-    font-size: 14px;
-    min-height: 40px;
     margin-bottom: 8px;
-  }
-  .card p span {
-    font-size: 0;
   }
   .detail {
     grid-template-columns: 1fr;
-    gap: 25px;
-  }
-  .detail h1 {
-    font-size: 40px;
   }
   footer {
     padding: 30px 22px;
@@ -324,10 +259,7 @@ footer {
 }
 .account-nav {
   display: flex;
-  gap: 20px;
   align-items: center;
-  margin-left: auto;
-  font-size: 13px;
 }
 .account-nav button {
   cursor: pointer;
@@ -392,7 +324,6 @@ footer {
   margin-bottom: 20px;
 }
 .summary h2 {
-  font-size: 26px;
   margin-top: 0;
 }
 .summary-skeleton {
@@ -528,10 +459,6 @@ footer {
   height: 64px;
   border-radius: 8px;
 }
-.receipt {
-  max-width: 850px;
-  margin: auto;
-}
 .receipt h1 {
   font-size: 44px;
 }
@@ -562,10 +489,6 @@ button:disabled {
   cursor: not-allowed;
 }
 @media (max-width: 700px) {
-  .account-nav {
-    font-size: 12px;
-    gap: 12px;
-  }
   header nav {
     display: none;
   }
@@ -607,15 +530,11 @@ button:disabled {
   }
 }
 .realtime-notice {
-  max-width: 1320px;
   margin: 0 auto;
-  padding: 10px 40px;
   color: #c3ad96;
-  font-size: 11px;
   border-bottom: 1px solid #38312a;
 }
 .realtime-notice p {
-  font-size: 13px;
   color: #ffcb9b;
   margin: 8px 0;
 }
@@ -637,9 +556,7 @@ button:disabled {
 }
 .profile-avatar {
   display: flex;
-  gap: 25px;
   align-items: center;
-  margin: 25px 0;
 }
 .profile-avatar img,
 .avatar-placeholder {

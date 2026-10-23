@@ -1,6 +1,7 @@
 import axios from "axios";
 import { QueryClient } from "@tanstack/react-query";
 import type { Session } from "../domain";
+import { mocksReady } from "./mock-ready";
 export const api = axios.create({ baseURL: "/api", timeout: 10000 });
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,7 +18,8 @@ export const queryClient = new QueryClient({
 });
 const visitor = localStorage.getItem("jungle-visitor") || crypto.randomUUID();
 localStorage.setItem("jungle-visitor", visitor);
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
+  await mocksReady;
   config.headers.set("X-Visitor", visitor);
   const token = localStorage.getItem("jungle-token");
   if (token && !config.headers.has("Authorization"))
