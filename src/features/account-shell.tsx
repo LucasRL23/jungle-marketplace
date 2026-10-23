@@ -31,6 +31,7 @@ export function AccountShell({
           <Link
             to="/account"
             hash="orders"
+            hashScrollIntoView={{ behavior: "instant", block: "start" }}
             activeOptions={{ exact: true, includeHash: true }}
           >
             <ShoppingBag size={17} />
@@ -39,6 +40,7 @@ export function AccountShell({
           <Link
             to="/account"
             hash="favorites"
+            hashScrollIntoView={{ behavior: "instant", block: "start" }}
             activeOptions={{ exact: true, includeHash: true }}
           >
             <Heart size={17} />

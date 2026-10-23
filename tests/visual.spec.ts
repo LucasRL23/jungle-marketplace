@@ -113,6 +113,7 @@ test("collector profile and wallets visual baselines", async ({ page }) => {
     .getByRole("navigation", { name: "Menu do colecionador" })
     .getByRole("link", { name: "Carteiras", exact: true })
     .click();
+  await expect(page).toHaveURL(/\/wallets$/);
   await expect(
     page.getByRole("button", { name: "Editar Primary wallet", exact: true }),
   ).toBeVisible();
