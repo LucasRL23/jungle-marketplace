@@ -8,6 +8,8 @@ import { Button } from "../components/ui/button";
 import { useCart, useSession, useWallets } from "./hooks";
 
 import { ProfileEditor, FavoritesPanel } from "./collector";
+import { AccountShell } from "./account-shell";
+import { LogOut } from "lucide-react";
 
 function ErrorNotice({ error }: { error: unknown }) {
   return error ? (
@@ -103,42 +105,49 @@ export function SessionGuard() {
   }, [session, path]);
   return null;
 }
-export function AccountNavigation() {
-  const { data: session } = useSession();
+function LogoutButton() {
   const router = useRouter();
   const logout = useMutation({
     mutationFn: (token: string | null) =>
       api.post(
         "/logout",
         {},
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       ),
   });
+  return (
+    <button
+      className="logout-button"
+      onClick={() => {
+        const token = localStorage.getItem("jungle-token");
+        localStorage.removeItem("jungle-token");
+        void queryClient.cancelQueries({ queryKey: ["session"] });
+        void clearPrivateData();
+        queryClient.setQueryData(["session"], null);
+        logout.mutate(token);
+        void router.navigate({
+          to: "/",
+          search: { q: "", category: "", sort: "recent", page: 1 },
+        });
+      }}
+      disabled={logout.isPending}
+    >
+      <LogOut size={16} />
+      Sair
+    </button>
+  );
+}
+export function AccountNavigation() {
+  const { data: session } = useSession();
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const collectorArea = path === "/account" || path === "/wallets";
   return (
     <div className="account-nav">
       <Link to="/cart">Carrinho</Link>
       {session ? (
         <>
           <Link to="/account">{session.user.name.split(" ")[0]}</Link>
-          <button
-            onClick={() => {
-              const token = localStorage.getItem("jungle-token");
-              localStorage.removeItem("jungle-token");
-              void queryClient.cancelQueries({ queryKey: ["session"] });
-              void clearPrivateData();
-              queryClient.setQueryData(["session"], null);
-              logout.mutate(token);
-              void router.navigate({
-                to: "/",
-                search: { q: "", category: "", sort: "recent", page: 1 },
-              });
-            }}
-            disabled={logout.isPending}
-          >
-            Sair
-          </button>
+          {!collectorArea && <LogoutButton />}
         </>
       ) : (
         <Link to="/login" search={{ returnTo: "/" }}>
@@ -856,14 +865,16 @@ export function AccountPage() {
       (await api.get<Order[]>("/orders", { signal })).data,
   });
   return (
-    <section>
-      <p className="eyebrow">YOUR SPACE</p>
-      <h1>Olá, {session?.user.name}</h1>
-      <p>{session?.user.email}</p>
-      <Link to="/wallets">Gerenciar carteiras →</Link>
+    <AccountShell logout={<LogoutButton />}>
+      <h1 className="account-greeting">Olá, {session?.user.name}</h1>
+
       <ProfileEditor />
-      <FavoritesPanel />
-      <h2 className="mt-8">Meus pedidos</h2>
+      <div id="favorites">
+        <FavoritesPanel />
+      </div>
+      <h2 id="orders" className="account-section-title">
+        Meus pedidos
+      </h2>
       {orders.isPending ? (
         <Loading />
       ) : orders.isError ? (
@@ -885,7 +896,7 @@ export function AccountPage() {
       ) : (
         <p>Você ainda não tem pedidos.</p>
       )}
-    </section>
+    </AccountShell>
   );
 }
 export function WalletsPage() {
@@ -915,10 +926,13 @@ export function WalletsPage() {
     mutation.mutate(Object.fromEntries(new FormData(e.currentTarget)));
   };
   return (
-    <section>
-      <Link to="/account">← Minha conta</Link>
-      <h1>Minhas carteiras</h1>
-      <div className="commerce-grid">
+    <AccountShell logout={<LogoutButton />}>
+      <h1 className="account-page-title">Minhas carteiras</h1>
+      <p className="muted">
+        Estas carteiras ficam disponíveis no pagamento e para receber NFTs
+        comprados na simulação.
+      </p>
+      <div className="wallets-layout">
         <div>
           {wallets.isPending ? (
             <Loading />
@@ -945,7 +959,7 @@ export function WalletsPage() {
           )}
           <ErrorNotice error={wallets.error} />
         </div>
-        <form key={editing} className="form summary" onSubmit={submit}>
+        <form key={editing} className="form wallet-form" onSubmit={submit}>
           <h2>{editing ? "Editar carteira" : "Nova carteira"}</h2>
           <Field
             name="label"
@@ -981,6 +995,6 @@ export function WalletsPage() {
           <p role="status">{saved ? "Carteira salva com sucesso." : ""}</p>
         </form>
       </div>
-    </section>
+    </AccountShell>
   );
 }

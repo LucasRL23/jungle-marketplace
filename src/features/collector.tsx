@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Heart } from "lucide-react";
+import { Heart, Eye, EyeOff } from "lucide-react";
 import type { Profile, Session } from "../domain";
 import { api, errorMessage, queryClient } from "../lib/api";
 import { useSession } from "./hooks";
@@ -140,6 +140,45 @@ async function readAvatar(file: File) {
   }
   return value;
 }
+function PasswordField({
+  name,
+  label,
+  autoComplete,
+  errorId,
+  minLength,
+}: {
+  name: string;
+  label: string;
+  autoComplete: string;
+  errorId?: string;
+  minLength?: number;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="field">
+      <label htmlFor={`profile-${name}`}>{label}</label>
+      <div className="password-input">
+        <input
+          id={`profile-${name}`}
+          name={name}
+          type={visible ? "text" : "password"}
+          autoComplete={autoComplete}
+          required
+          minLength={minLength}
+          aria-describedby={errorId}
+        />
+        <button
+          type="button"
+          aria-label={`${visible ? "Ocultar" : "Mostrar"} ${label.toLowerCase()}`}
+          aria-pressed={visible}
+          onClick={() => setVisible(!visible)}
+        >
+          {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+        </button>
+      </div>
+    </div>
+  );
+}
 export function ProfileEditor() {
   const { data: session } = useSession(),
     token = localStorage.getItem("jungle-token");
@@ -234,64 +273,74 @@ export function ProfileEditor() {
       </div>
     );
   const data = profile.data!;
+  const avatarField = (
+    <div className="profile-avatar">
+      {data.avatar ? (
+        <img src={data.avatar} alt={`Avatar de ${data.name}`} />
+      ) : (
+        <div className="avatar-placeholder" aria-label="Sem foto de perfil">
+          {data.name.charAt(0)}
+        </div>
+      )}
+      <div>
+        <label className="sr-only">
+          Foto do perfil
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            disabled={avatar.isPending}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setImageError("");
+              setNotice("");
+              void readAvatar(file)
+                .then((value) => avatar.mutate(value))
+                .catch((error) => {
+                  setImageError((error as Error).message);
+                  if (fileRef.current) fileRef.current.value = "";
+                });
+            }}
+          />
+        </label>
+        <Button
+          type="button"
+          disabled={avatar.isPending}
+          onClick={() => fileRef.current?.click()}
+        >
+          Alterar
+        </Button>
+        <small>PNG, JPEG ou WebP · até 256 KB</small>
+        {data.avatar && (
+          <button
+            type="button"
+            className="text-button"
+            disabled={avatar.isPending}
+            onClick={() => avatar.mutate("")}
+          >
+            Remover foto do perfil
+          </button>
+        )}
+      </div>
+    </div>
+  );
   return (
     <div className="profile-editor">
       <h2>Perfil do colecionador</h2>
-      <div className="profile-avatar">
-        {data.avatar ? (
-          <img src={data.avatar} alt={`Avatar de ${data.name}`} />
-        ) : (
-          <div className="avatar-placeholder" aria-label="Sem foto de perfil">
-            {data.name.charAt(0)}
-          </div>
-        )}
-        <div>
-          <label className="field">
-            Foto do perfil
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              disabled={avatar.isPending}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setImageError("");
-                setNotice("");
-                void readAvatar(file)
-                  .then((value) => avatar.mutate(value))
-                  .catch((error) => {
-                    setImageError((error as Error).message);
-                    if (fileRef.current) fileRef.current.value = "";
-                  });
-              }}
-            />
-          </label>
-          <small>PNG, JPEG ou WebP · até 256 KB</small>
-          {data.avatar && (
-            <button
-              className="text-button"
-              disabled={avatar.isPending}
-              onClick={() => avatar.mutate("")}
-            >
-              Remover foto do perfil
-            </button>
-          )}
-        </div>
-      </div>
       {(imageError || avatar.error) && (
         <p className="form-error" role="alert">
           {imageError || errorMessage(avatar.error)}
         </p>
       )}
-      <div className="commerce-grid">
+      <div className="profile-forms">
         <form
-          className="form summary"
+          className="form profile-data-form"
           onSubmit={submit}
-          key={`${data.id}:${data.name}:${data.email}`}
+          key={`${data.id}:${data.name}:${data.email}:${data.username}:${data.ens}:${data.walletNickname}:${data.bio}`}
         >
           <label className="field">
-            Nome do perfil
+            Nome de exibição
             <input
               name="name"
               required
@@ -299,6 +348,18 @@ export function ProfileEditor() {
               maxLength={80}
               defaultValue={data.name}
               aria-describedby={update.error ? "profile-error" : undefined}
+            />
+          </label>
+          <label className="field">
+            Nome de usuário
+            <input
+              name="username"
+              required
+              minLength={3}
+              maxLength={30}
+              pattern="[a-zA-Z0-9][a-zA-Z0-9._\x2d]{2,29}"
+              defaultValue={data.username}
+              autoComplete="username"
             />
           </label>
           <label className="field">
@@ -312,6 +373,24 @@ export function ProfileEditor() {
             />
           </label>
           <label className="field">
+            Nome ENS (opcional)
+            <input
+              name="ens"
+              maxLength={67}
+              defaultValue={data.ens}
+              placeholder="colecionador.eth"
+            />
+          </label>
+          <label className="field">
+            Apelido da carteira
+            <input
+              name="walletNickname"
+              maxLength={60}
+              defaultValue={data.walletNickname}
+            />
+          </label>
+          {avatarField}
+          <label className="field profile-bio">
             Biografia
             <textarea
               name="bio"
@@ -327,43 +406,31 @@ export function ProfileEditor() {
           )}
           <Button disabled={update.isPending}>Salvar perfil</Button>
         </form>
-        <form className="form summary" onSubmit={changePassword}>
+        <form className="form password-form" onSubmit={changePassword}>
           <h3>Alterar senha</h3>
-          <label className="field">
-            Senha atual
-            <input
-              name="currentPassword"
-              type="password"
-              autoComplete="current-password"
-              required
-              aria-describedby={
-                password.error || passwordError ? "password-error" : undefined
-              }
-            />
-          </label>
-          <label className="field">
-            Nova senha
-            <input
-              name="newPassword"
-              type="password"
-              autoComplete="new-password"
-              minLength={8}
-              required
-              aria-describedby={
-                password.error || passwordError ? "password-error" : undefined
-              }
-            />
-          </label>
-          <label className="field">
-            Confirmar nova senha
-            <input
-              name="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              minLength={8}
-              required
-            />
-          </label>
+          <PasswordField
+            name="currentPassword"
+            label="Senha atual"
+            autoComplete="current-password"
+            errorId={
+              password.error || passwordError ? "password-error" : undefined
+            }
+          />
+          <PasswordField
+            name="newPassword"
+            label="Nova senha"
+            autoComplete="new-password"
+            minLength={8}
+            errorId={
+              password.error || passwordError ? "password-error" : undefined
+            }
+          />
+          <PasswordField
+            name="confirmPassword"
+            label="Confirmar nova senha"
+            autoComplete="new-password"
+            minLength={8}
+          />
           <small>Ao menos 8 caracteres, incluindo letras e números.</small>
           {(passwordError || password.error) && (
             <p id="password-error" role="alert" className="form-error">

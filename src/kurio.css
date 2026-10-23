@@ -737,3 +737,267 @@ select {
     scroll-behavior: auto;
   }
 }
+
+/* Collector screens share the sidebar and compact form rhythm in Figma. */
+.account-layout {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  min-height: 80vh;
+}
+.account-sidebar {
+  background: #291a15;
+  margin-top: 2px;
+}
+.account-sidebar h2 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0;
+  padding: 20px 18px 12px;
+}
+.account-sidebar nav {
+  display: flex;
+  flex-direction: column;
+}
+.account-sidebar nav a {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-height: 46px;
+  padding: 12px 18px;
+  border-left: 4px solid transparent;
+  color: #d3a572;
+  font-size: 13px;
+}
+.account-sidebar nav a[aria-current="page"] {
+  border-left-color: var(--gold);
+  background: #342118;
+  color: #f0bd89;
+}
+.account-sidebar nav a:hover {
+  background: #342118;
+}
+.account-sidebar-logout {
+  border-top: 1px solid #63442c;
+  padding: 12px 20px;
+  margin-top: 18px;
+}
+.logout-button {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 13px;
+  color: #d3a572;
+}
+.account-content {
+  min-width: 0;
+}
+.account-greeting {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+.account-content .profile-editor {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.account-content .profile-editor h2,
+.account-page-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0 0 30px;
+}
+.profile-data-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  align-items: start;
+}
+.profile-data-form .field {
+  font-size: 12px;
+  gap: 10px;
+}
+.profile-data-form .field input {
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.profile-data-form .profile-bio,
+.profile-data-form > .form-error {
+  grid-column: 1 / -1;
+}
+.profile-data-form > button {
+  justify-self: start;
+  padding: 10px 24px;
+  font-size: 12px;
+}
+.profile-avatar {
+  gap: 16px;
+  margin: 0;
+  min-width: 0;
+}
+.profile-avatar img,
+.profile-avatar .avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
+}
+.profile-avatar small {
+  display: block;
+  margin-top: 8px;
+  font-size: 9px;
+}
+.profile-avatar button[data-slot="button"] {
+  padding: 7px 18px;
+  font-size: 12px;
+}
+.profile-avatar .text-button {
+  font-size: 10px;
+  padding: 5px 0;
+}
+.password-form {
+  max-width: calc((100% - 28px) / 2);
+  margin-top: 32px;
+  gap: 22px;
+}
+.password-form h3 {
+  margin: 0;
+  font-weight: 500;
+  font-size: 16px;
+}
+.password-form .field {
+  font-size: 12px;
+}
+.password-form small {
+  font-size: 10px;
+  line-height: 1.8;
+}
+.password-form > button {
+  align-self: start;
+  font-size: 12px;
+}
+.password-input {
+  position: relative;
+}
+.password-input input {
+  padding-right: 46px;
+}
+.password-input button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 42px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #b39370;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+}
+.account-section-title {
+  font-size: 18px;
+  margin-top: 36px;
+}
+.account-favorites h2 {
+  font-size: 18px;
+}
+.wallets-layout {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 28px;
+  margin-top: 28px;
+}
+.wallets-layout > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.wallets-layout .summary {
+  padding: 20px;
+}
+.wallets-layout .summary h2 {
+  font-size: 15px;
+}
+.wallet-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.wallet-form h2,
+.wallet-form > p {
+  grid-column: 1 / -1;
+}
+.wallet-form h2 {
+  font-size: 16px;
+  margin: 0;
+}
+.wallet-form .field {
+  font-size: 12px;
+}
+.wallet-form .field input,
+.wallet-form .field select {
+  font-size: 12px;
+  padding: 10px 12px;
+}
+.wallet-form > button {
+  justify-self: start;
+  align-self: end;
+  font-size: 12px;
+}
+.account-layout .account-page-title {
+  margin-bottom: 12px;
+}
+@media (max-width: 1000px) {
+  .account-layout {
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: 24px;
+  }
+}
+@media (max-width: 700px) {
+  .account-layout {
+    display: block;
+    padding-top: 24px !important;
+  }
+  .account-sidebar {
+    margin-bottom: 28px;
+  }
+  .account-sidebar h2 {
+    font-size: 14px;
+    padding: 14px 16px;
+  }
+  .account-sidebar nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .account-sidebar nav a {
+    font-size: 11px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .account-sidebar-logout {
+    margin: 0;
+    padding: 12px 16px;
+  }
+  .profile-data-form {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .password-form {
+    max-width: 100%;
+  }
+  .wallet-form {
+    grid-template-columns: 1fr;
+  }
+  .wallets-layout > div {
+    grid-template-columns: 1fr;
+  }
+}

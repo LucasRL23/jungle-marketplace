@@ -57,3 +57,38 @@ test("catalog, detail, cart and checkout visual baselines", async ({
   ).toBeVisible();
   await capture(page, "checkout.png");
 });
+
+test("collector profile and wallets visual baselines", async ({ page }) => {
+  await page.goto("/account");
+  await page.getByLabel("E-mail", { exact: true }).fill("alex@example.test");
+  await page.getByLabel("Senha", { exact: true }).fill("Jungle123!");
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByLabel("Nome de usuário", { exact: true })).toHaveValue(
+    "alex.collector",
+  );
+  await capture(page, "profile.png");
+  const menu = page.getByRole("navigation", { name: "Menu do colecionador" });
+  await expect(menu.locator('[aria-current="page"]')).toHaveCount(1);
+  await menu.getByRole("link", { name: "Atividade", exact: true }).click();
+  await expect(page).toHaveURL(/#orders$/);
+  await expect(
+    menu.getByRole("link", { name: "Atividade", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(menu.locator('[aria-current="page"]')).toHaveCount(1);
+  await menu
+    .getByRole("link", { name: "Lista de interesse", exact: true })
+    .click();
+  await expect(page).toHaveURL(/#favorites$/);
+  await expect(
+    menu.getByRole("link", { name: "Lista de interesse", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(menu.locator('[aria-current="page"]')).toHaveCount(1);
+  await page
+    .getByRole("navigation", { name: "Menu do colecionador" })
+    .getByRole("link", { name: "Carteiras", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Editar Primary wallet", exact: true }),
+  ).toBeVisible();
+  await capture(page, "wallets.png");
+});

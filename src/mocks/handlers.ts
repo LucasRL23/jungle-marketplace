@@ -100,6 +100,9 @@ async function serve(request: Request) {
         id: crypto.randomUUID(),
         name,
         email,
+        username: `collector-${crypto.randomUUID().slice(0, 12)}`,
+        ens: "",
+        walletNickname: "",
         salt,
         passwordHash: hash,
         wallets: [],
@@ -186,6 +189,9 @@ async function serve(request: Request) {
       ...publicUser(user),
       avatar: user.avatar,
       bio: user.bio,
+      username: user.username,
+      ens: user.ens,
+      walletNickname: user.walletNickname,
     });
     if (method === "GET") return success(view());
     if (method === "PATCH" && path === "/profile/avatar") {
@@ -213,7 +219,19 @@ async function serve(request: Request) {
     } else if (method === "PATCH") {
       const name = text(body, "name"),
         email = text(body, "email").toLowerCase(),
-        bio = text(body, "bio");
+        bio = text(body, "bio"),
+        username = (
+          typeof body.username === "string"
+            ? text(body, "username")
+            : user.username
+        ).toLowerCase(),
+        ens = (
+          typeof body.ens === "string" ? text(body, "ens") : user.ens
+        ).toLowerCase(),
+        walletNickname =
+          typeof body.walletNickname === "string"
+            ? text(body, "walletNickname")
+            : user.walletNickname;
       if (
         name.length < 2 ||
         name.length > 80 ||
@@ -226,9 +244,26 @@ async function serve(request: Request) {
         );
       if (db.users.some((u) => u.id !== user.id && u.email === email))
         fail(409, "Já existe uma conta com este e-mail.");
+      if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username))
+        fail(
+          422,
+          "Use de 3 a 30 caracteres no usuário: letras, números, ponto, hífen ou sublinhado.",
+        );
+      if (db.users.some((u) => u.id !== user.id && u.username === username))
+        fail(409, "Este nome de usuário já está em uso.");
+      if (ens && !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.eth$/.test(ens))
+        fail(
+          422,
+          "Informe um nome ENS terminado em .eth ou deixe o campo vazio.",
+        );
+      if (walletNickname.length > 60)
+        fail(422, "O apelido da carteira deve ter até 60 caracteres.");
       user.name = name;
       user.email = email;
       user.bio = bio;
+      user.username = username;
+      user.ens = ens;
+      user.walletNickname = walletNickname;
     } else fail(405, "Método não permitido.");
     persist(db);
     return success(view());

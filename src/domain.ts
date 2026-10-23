@@ -27,6 +27,9 @@ export interface User {
   email: string;
 }
 export interface Profile extends User {
+  username: string;
+  ens: string;
+  walletNickname: string;
   avatar: string;
   bio: string;
 }

@@ -119,7 +119,30 @@ test("profile, image validation, avatar and password persist through refresh", a
   await page
     .getByLabel("E-mail do perfil", { exact: true })
     .fill("alex.updated@example.test");
-  await page.getByLabel("Nome do perfil", { exact: true }).fill("Alex Updated");
+  await page
+    .getByLabel("Nome de usuário", { exact: true })
+    .fill("luna.collector");
+  await page.getByRole("button", { name: "Salvar perfil" }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "nome de usuário já está em uso",
+  );
+  await page
+    .getByLabel("Nome de usuário", { exact: true })
+    .fill("alex.updated");
+  await page
+    .getByLabel("Nome ENS (opcional)", { exact: true })
+    .fill("invalid-ens");
+  await page.getByRole("button", { name: "Salvar perfil" }).click();
+  await expect(page.getByRole("alert")).toContainText("terminado em .eth");
+  await page
+    .getByLabel("Nome ENS (opcional)", { exact: true })
+    .fill("alex-updated.eth");
+  await page
+    .getByLabel("Apelido da carteira", { exact: true })
+    .fill("Main Vault");
+  await page
+    .getByLabel("Nome de exibição", { exact: true })
+    .fill("Alex Updated");
   await page
     .getByRole("textbox", { name: "Biografia", exact: true })
     .fill("Colecionando novas perspectivas.");
@@ -140,12 +163,35 @@ test("profile, image validation, avatar and password persist through refresh", a
     .setInputFiles(path.resolve("tests/fixtures/avatar.png"));
   await expect(page.getByAltText("Avatar de Alex Updated")).toBeVisible();
   await page.reload();
+  await expect(page.getByLabel("Nome de usuário", { exact: true })).toHaveValue(
+    "alex.updated",
+  );
+  await expect(
+    page.getByLabel("Nome ENS (opcional)", { exact: true }),
+  ).toHaveValue("alex-updated.eth");
+  await expect(
+    page.getByLabel("Apelido da carteira", { exact: true }),
+  ).toHaveValue("Main Vault");
   await expect(
     page.getByRole("textbox", { name: "Biografia", exact: true }),
   ).toHaveValue("Colecionando novas perspectivas.");
   await expect(page.getByAltText("Avatar de Alex Updated")).toBeVisible();
   await page.getByLabel("Senha atual", { exact: true }).fill("wrongpassword");
   await page.getByLabel("Nova senha", { exact: true }).fill("NewJungle456!");
+  await page
+    .getByRole("button", { name: "Mostrar nova senha", exact: true })
+    .click();
+  await expect(page.getByLabel("Nova senha", { exact: true })).toHaveAttribute(
+    "type",
+    "text",
+  );
+  await page
+    .getByRole("button", { name: "Ocultar nova senha", exact: true })
+    .click();
+  await expect(page.getByLabel("Nova senha", { exact: true })).toHaveAttribute(
+    "type",
+    "password",
+  );
   await page
     .getByLabel("Confirmar nova senha", { exact: true })
     .fill("Different456!");
@@ -328,9 +374,9 @@ test("an expired socket session is revalidated and returns to login", async ({
   await expect(
     page.getByRole("heading", { name: "Olá, Alex Collector" }),
   ).toBeVisible();
-  await expect(page.getByLabel("Nome do perfil", { exact: true })).toHaveValue(
-    "Alex Collector",
-  );
+  await expect(
+    page.getByLabel("Nome de exibição", { exact: true }),
+  ).toHaveValue("Alex Collector");
   // The event deliberately navigates away. Do not await the fixture response
   // body in a page execution context that is about to be destroyed.
   await page.evaluate(() => {

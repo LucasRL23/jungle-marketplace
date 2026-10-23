@@ -141,6 +141,9 @@ export async function getDb(): Promise<Database> {
           user.avatar ??= "";
           user.bio ??= "";
           user.favorites ??= [];
+          user.username ??= `collector-${user.id.replace(/[^a-zA-Z0-9]/g, "").slice(-12)}`;
+          user.ens ??= "";
+          user.walletNickname ??= "";
         }
         // Upgrade the provisional artwork fixtures without resetting accounts,
         // historical quotes or pending orders. Cart versions require a new review.
@@ -169,6 +172,9 @@ export async function getDb(): Promise<Database> {
       users.push({
         id: `user-${i + 1}`,
         name,
+        username: i === 0 ? "alex.collector" : "luna.collector",
+        ens: "",
+        walletNickname: "Primary wallet",
         avatar: "",
         bio: "",
         favorites: [],

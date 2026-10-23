@@ -31,7 +31,8 @@ Cada conta inicial possui uma carteira Ethereum simulada. Novas contas precisam 
 - Recuperação da mesma tentativa após timeout ou refresh; itens preservados na recusa e abatidos apenas após confirmação.
 - Skeletons, falhas, resultado vazio e layout responsivo.
 - Favoritos otimistas com rollback, persistência e isolamento por usuário.
-- Edição de nome, e-mail e biografia, upload/remoção de avatar e alteração de senha.
+- Perfil com nome de exibição, usuário único, e-mail, ENS opcional, apelido de carteira e biografia. Upload/remoção de avatar, alteração de senha e controle de visibilidade dos campos.
+- Menu do colecionador compartilhado com carteiras, âncoras para atividade/favoritos e logout com limpeza imediata da sessão.
 - Socket.IO via WebSocket interceptado pelo MSW e `@mswjs/socket.io-binding`, com preços/estoque e pedidos versionados, deduplicação, reconexão e limpeza de subscriptions.
 
 ## Cenários reproduzíveis
@@ -51,7 +52,7 @@ Reset do cenário: `localStorage.removeItem('jungle-scenario')`. Reset integral:
 - [x] Eventos pelo socket.io-client + binding MSW, versionamento, reconexão e alterações de preço/estoque durante o checkout.
 - [x] Cenários determinísticos de eventos duplicados/antigos e perda de conexão.
 - [x] Cenário REST de latência variável e cancelamento de buscas antigas.
-- [x] Baselines visuais de catálogo/detalhe/carrinho/checkout em 390, 768 e 1440 pixels.
+- [x] Baselines visuais de catálogo/detalhe/carrinho/checkout/perfil/carteiras em 390, 768 e 1440 pixels.
 - [ ] Revisar cobertura restante do enunciado e navegação completa por teclado.
 - [x] Auditar Lighthouse (3 medições por página/perfil e medianas).
 - [ ] Deploy público e verificação de rotas diretas em produção.
@@ -106,7 +107,7 @@ A suíte E2E usa o build otimizado via `vite preview` na porta 4173; `pnpm test:
 
 ## Regressão visual
 
-`tests/visual.spec.ts` captura catálogo, detalhe, carrinho com um item e checkout autenticado, em 390, 768 e 1440 pixels. As 12 imagens aprovadas ficam em `tests/visual.spec.ts-snapshots`. O teste espera fontes e imagens visíveis, desativa animações durante a captura e verifica ausência de overflow horizontal. Os filtros mobile podem ser recolhidos pelo controle nativo `details`.
+`tests/visual.spec.ts` captura catálogo, detalhe, carrinho com um item, checkout autenticado, perfil e carteiras, em 390, 768 e 1440 pixels. As 18 imagens aprovadas ficam em `tests/visual.spec.ts-snapshots`. O teste espera fontes e imagens visíveis, desativa animações durante a captura e verifica ausência de overflow horizontal. Os filtros mobile podem ser recolhidos pelo controle nativo `details`.
 
 As baselines atuais foram geradas em Windows com o Chromium instalado pela versão de Playwright fixada no lockfile. Execute `pnpm exec playwright test tests/visual.spec.ts` para comparar. Para aprovar uma alteração visual intencional: `pnpm exec playwright test tests/visual.spec.ts --update-snapshots`, inspecione cada mudança e versione as imagens. Outros sistemas operacionais usam arquivos próprios para acomodar diferenças de renderização de fontes. As imagens comparam a implementação com a sua baseline; a revisão de fidelidade ao Figma é uma atividade separada.
 
@@ -122,4 +123,6 @@ Os 12 relatórios HTML, 12 JSON e `summary.json` ficam em `reports/lighthouse`. 
 
 ## Resultado Lighthouse local
 
-As medianas de três execuções por página/perfil foram 96 de desempenho no mobile e 100 no desktop, tanto no catálogo quanto no detalhe. Acessibilidade, boas práticas e SEO: 100 nos quatro grupos. LCP mobile: 2.50s no catálogo e 2.58s no detalhe; TBT: 57ms/58ms. Resultados completos e condições em `reports/lighthouse/summary.json`; não são medições do deploy.
+No checkpoint `76abf6c` (antes dos ajustes seguintes na área do colecionador), as medianas de três execuções por página/perfil foram 96 de desempenho no mobile e 100 no desktop, tanto no catálogo quanto no detalhe. Acessibilidade, boas práticas e SEO: 100 nos quatro grupos. LCP mobile: 2.50s no catálogo e 2.58s no detalhe; TBT: 57ms/58ms. Resultados completos e condições em `reports/lighthouse/summary.json`; não são medições do deploy.
+
+Em 23/10/2026, a suíte expandida passou em **44 execuções**: 38 funcionais e 6 cenários visuais (18 capturas). A validação de perfil cobre usuário duplicado, ENS inválido, persistência dos novos campos e mostrar/ocultar senha. Depois do ajuste de seleção no menu, as três verificações de perfil/carteiras passaram novamente, incluindo navegação por hash e seleção única.
