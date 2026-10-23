@@ -10,7 +10,7 @@ async function enableMocks() {
   if (import.meta.env.VITE_MOCKS !== "false") {
     const { worker } = await import("./mocks/browser");
 
-    await worker.start();
+    await worker.start({ quiet: import.meta.env.PROD });
   }
 }
 void enableMocks().then(mockStartup.resolve, mockStartup.reject);
