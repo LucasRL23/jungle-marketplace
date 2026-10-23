@@ -104,6 +104,13 @@ footer {
 .hero-marker i:first-child {
   background: var(--gold);
 }
+.mobile-hero-title,
+.hero-secondary,
+.mobile-filter-trigger,
+.mobile-nav-item,
+.mobile-nav-icon {
+  display: none;
+}
 .eyebrow {
   color: var(--gold);
   letter-spacing: 1px;
@@ -1768,4 +1775,1055 @@ select {
   .dialog-content.artwork-dialog {
     padding: 24px 12px;
   }
+}
+/* Figma alignment: shared desktop composition and mobile discovery frame. */
+.site-header .brand {
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.main-navigation {
+  margin-left: auto;
+  margin-right: auto;
+}
+.main-navigation button {
+  background: none;
+  border: 0;
+  color: #b8a58f;
+  padding: 0;
+  cursor: not-allowed;
+}
+.header-search {
+  display: grid;
+  place-items: center;
+}
+.account-nav {
+  margin-left: 0;
+}
+.account-nav > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.account-nav .account-caption {
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+}
+.account-nav a:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-copy {
+  position: relative;
+}
+.hero-marker {
+  justify-content: end;
+  margin-right: 12px;
+}
+.hero h1 {
+  letter-spacing: 0;
+}
+.marketplace-catalog {
+  grid-template-columns: 310px minmax(0, 1fr);
+}
+.catalog-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 1px solid #4b3020;
+  padding-bottom: 16px;
+}
+.catalog-toolbar {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  gap: 16px;
+}
+.catalog-toolbar h2 {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.catalog-toolbar label {
+  gap: 4px;
+}
+.catalog-toolbar label > span {
+  display: none;
+}
+.catalog-toolbar select {
+  max-width: 175px;
+}
+.catalog-search {
+  width: 215px;
+  margin: 0;
+  padding: 8px 10px;
+  gap: 8px;
+}
+.catalog-search input {
+  min-width: 0;
+  font-size: 10px;
+}
+.count {
+  margin: 12px 0;
+}
+.card {
+  background: transparent;
+  padding: 0;
+}
+.card:hover {
+  background: transparent;
+}
+.card-art {
+  background: #291a15;
+  padding: 20px;
+}
+.card-art img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+  transition: filter 150ms;
+}
+.card:hover .card-art img {
+  filter: brightness(1.08);
+}
+.card h3 {
+  margin: 10px 0 3px;
+  font-size: 12px;
+}
+.card p {
+  font-size: 13px;
+}
+.catalog-results .grid {
+  row-gap: 44px;
+}
+.filter-panel {
+  border-bottom: none;
+  padding: 22px 20px;
+}
+.featured-nft {
+  padding: 20px 0 0;
+  text-align: center;
+}
+.featured-nft > span {
+  color: #e7a568;
+  font-size: 17px;
+}
+.featured-nft strong {
+  justify-content: center;
+  padding: 14px;
+}
+.featured-nft img {
+  border-radius: 18px;
+}
+.footer-benefits {
+  background: #291a15;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  padding: 32px 20px;
+  border: 0;
+}
+.footer-benefits article {
+  padding: 0 20px;
+}
+.footer-benefits article + article {
+  border-left: 1px solid #725034;
+}
+.benefit-symbol {
+  display: grid;
+  place-items: center;
+  background: #d79048;
+  color: #170f0c;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+.benefit-symbol svg {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+}
+.footer-benefits h2 {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 16px 0 8px;
+}
+.footer-benefits p {
+  font-size: 10px;
+  line-height: 1.8;
+}
+.footer-discover h2 {
+  margin-top: 0;
+}
+.footer-discover > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  background: #d79048;
+  padding: 8px 12px;
+  color: #170f0c;
+  font-size: 10px;
+}
+.footer-discover > a svg {
+  color: inherit;
+  width: 14px;
+  height: 14px;
+}
+.footer-brand-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  background: #38230f;
+  padding: 22px 32px;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.footer-brand-bar strong {
+  letter-spacing: 1px;
+}
+.footer-bottom {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px;
+  padding: 28px 32px;
+  background: #291a15;
+}
+.footer-bottom nav {
+  gap: 10px;
+  font-size: 10px;
+}
+.footer-bottom h2 {
+  font-size: 12px;
+  letter-spacing: 0;
+  margin: 0 0 5px;
+}
+.footer-bottom .demo-label {
+  margin: 0;
+  font-size: 10px;
+}
+.footer-copyright {
+  text-align: center;
+  border: 0;
+  padding: 18px 0;
+}
+.nft-page .detail {
+  grid-template-columns: minmax(0, 570px) minmax(0, 1fr);
+  gap: 40px;
+  margin-top: 0;
+}
+.nft-page .detail h1 {
+  font-size: 25px;
+  letter-spacing: 0;
+  margin: 0 0 12px;
+}
+.nft-page .detail h2 {
+  margin: 14px 0;
+  font-size: 19px;
+}
+.nft-gallery {
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 24px;
+}
+.gallery-thumbnails button {
+  width: 100px;
+  height: 100px;
+  border-radius: 4px;
+}
+.gallery-thumbnails {
+  gap: 12px;
+}
+.gallery-stage {
+  padding: 16px;
+  border-radius: 0;
+}
+.gallery-stage > img {
+  border-radius: 12px;
+}
+.gallery-stage[data-view="accessory"] > img,
+.gallery-thumbnails .crop-accessory {
+  transform: scale(2.4);
+  transform-origin: 50% 30%;
+}
+.nft-page .purchase-controls {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) auto;
+  gap: 16px;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-top: 24px;
+}
+.purchase-controls > .field:first-child {
+  grid-column: 1 / -1;
+}
+.purchase-controls > .field:nth-child(2) {
+  grid-column: 1;
+}
+.purchase-controls > .field:nth-child(2) input {
+  max-width: 90px;
+}
+.purchase-controls > button {
+  align-self: end;
+  padding: 11px;
+  font-size: 11px;
+  min-height: 42px;
+}
+.purchase-controls .favorite-action,
+.purchase-controls .favorite-login {
+  align-self: end;
+  font-size: 10px;
+}
+.purchase-controls .favorite-action > button {
+  min-height: 42px;
+  padding: 10px 12px;
+  font-size: 10px;
+}
+.purchase-controls > .form-error,
+.purchase-controls > p,
+.purchase-controls > a:not(.favorite-login) {
+  grid-column: 1 / -1;
+}
+.purchase-controls > p:empty {
+  display: none;
+}
+.nft-description {
+  margin-top: 48px;
+  border: 0;
+  padding-top: 0;
+}
+.nft-description h2 {
+  border-bottom: 1px solid #725034;
+  padding: 0 0 14px;
+  color: #d79048;
+  font-size: 14px;
+}
+.nft-description dl {
+  gap: 16px;
+}
+.related-nfts {
+  margin-top: 56px;
+}
+.related-nfts h2 {
+  font-size: 14px;
+}
+.commerce-page > h1 {
+  font-size: 16px;
+  margin-bottom: 24px;
+}
+.checkout-form {
+  gap: 20px 24px;
+}
+.checkout-form .field {
+  gap: 6px;
+}
+.checkout-items li {
+  background: #291a15;
+  border: 0;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.account-layout {
+  min-height: 80vh;
+}
+.wallet-form input[readonly] {
+  color: #c3ab98;
+}
+@media (max-width: 1279px) {
+  .marketplace-catalog {
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: 28px;
+  }
+  .catalog-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .catalog-toolbar {
+    flex-direction: row;
+  }
+  .catalog-search {
+    width: 100%;
+  }
+  .nft-page .detail {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 28px;
+  }
+  .nft-gallery {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .gallery-thumbnails button {
+    width: 72px;
+    height: 72px;
+  }
+  .nft-page .purchase-controls {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+  .purchase-controls .favorite-action,
+  .purchase-controls .favorite-login {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 701px) and (max-width: 950px) {
+  .main-navigation {
+    gap: 14px;
+    font-size: 11px;
+  }
+  .main-navigation button {
+    display: none;
+  }
+  .header-search {
+    display: none;
+  }
+  .footer-benefits,
+  .footer-bottom {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 32px;
+  }
+  .footer-benefits article:nth-child(3) {
+    border-left: 0;
+  }
+  .nft-page .detail {
+    grid-template-columns: 1fr;
+  }
+  .nft-gallery {
+    max-width: 570px;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 24px;
+  }
+  .gallery-thumbnails button {
+    width: 100px;
+    height: 100px;
+  }
+  .marketplace-catalog {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 22px;
+  }
+}
+@media (max-width: 700px) {
+  body {
+    padding-bottom: 82px;
+  }
+  .site-header {
+    display: contents;
+  }
+  .site-header .brand,
+  .site-header .main-navigation,
+  .header-search {
+    display: none;
+  }
+  .account-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    min-height: 72px;
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom));
+    margin: 0;
+    display: flex;
+    justify-content: space-around;
+    gap: 8px;
+    border-radius: 28px 28px 0 0;
+    border-top: 1px solid #513422;
+    background: #291a15;
+    box-shadow: 0 -8px 32px rgb(0 0 0 / 15%);
+  }
+  .account-nav > a,
+  .account-nav a:last-child {
+    display: grid;
+    place-items: center;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 8px;
+    border-radius: 50%;
+    background: none;
+    color: #dfb789;
+  }
+  .account-nav a[aria-current="page"] {
+    color: #f4ad61;
+    background: #3b261b;
+  }
+  .account-nav .mobile-explore {
+    width: 58px;
+    height: 58px;
+    margin-top: -28px;
+    background: #d79048;
+    color: #170f0c;
+    border: 6px solid #291a15;
+  }
+  .mobile-nav-icon {
+    display: block;
+  }
+  .account-nav .account-caption {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .account-nav .logout-button {
+    font-size: 0;
+    min-width: 35px;
+    justify-content: center;
+  }
+  .account-nav .logout-button svg {
+    width: 20px;
+    height: 20px;
+  }
+  main:has(.marketplace-catalog) {
+    position: relative;
+  }
+  main:has(.marketplace-catalog) .catalog-search {
+    position: absolute;
+    top: 24px;
+    left: 0;
+    right: 56px;
+    width: auto;
+    height: 44px;
+    margin: 0;
+    background: #291a15;
+    border: 0;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  main:has(.marketplace-catalog) .catalog-search input {
+    font-size: 12px;
+    background: transparent;
+  }
+  .mobile-filter-trigger {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 24px;
+    right: 0;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 12px;
+    background: #d79048;
+    color: #170f0c;
+  }
+  .hero {
+    display: grid;
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) 42%;
+    gap: 4px;
+    align-items: center;
+    padding: 12px 12px 26px;
+    margin-top: 84px;
+    min-height: 190px;
+    background: radial-gradient(
+      ellipse at 15% 0%,
+      #805731 0%,
+      #53331b 45%,
+      #291a15 100%
+    );
+    border-radius: 28px;
+  }
+  .hero-copy {
+    position: static;
+    z-index: 1;
+    padding: 0 2px;
+  }
+  .desktop-hero-title {
+    display: none;
+  }
+  .mobile-hero-title {
+    display: block;
+  }
+  .hero h1 {
+    font-size: 17px;
+    line-height: 1.7;
+    letter-spacing: 0;
+    font-weight: 600;
+    margin: 6px 0;
+  }
+  .hero .eyebrow {
+    font-size: 10px;
+    margin: 0;
+    color: #f2e1cd;
+  }
+  .hero div > p:not(.eyebrow) {
+    font-size: 10px;
+    line-height: 1.7;
+    margin: 6px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: #dfc5a5;
+  }
+  .hero-copy > a[data-slot="button"] {
+    background: transparent;
+    padding: 0;
+    font-size: 11px;
+    color: #ffbf78;
+    justify-content: start;
+  }
+  .hero .hero-art {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 16px;
+    align-self: start;
+  }
+  .hero-secondary {
+    display: block;
+    position: absolute;
+    width: 56px;
+    height: 56px;
+    right: calc(42% - 42px);
+    bottom: 35px;
+    border: 4px solid #c3ad88;
+    border-radius: 16px;
+  }
+  .hero-marker {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    justify-content: center;
+    margin: 0;
+  }
+  .hero-marker i {
+    background: #8e633f;
+  }
+  .hero-marker i:first-child {
+    background: #ffb56e;
+  }
+  .marketplace-catalog {
+    display: block;
+    margin-top: 0;
+    padding-top: 20px !important;
+  }
+  .filter-disclosure {
+    margin-bottom: 12px;
+  }
+  .filter-disclosure:not([open]) {
+    display: none;
+  }
+  .filter-disclosure > summary {
+    background: #291a15;
+  }
+  .catalog-controls {
+    padding-bottom: 8px;
+  }
+  .catalog-toolbar {
+    margin-top: 0;
+    flex-direction: row;
+  }
+  .catalog-toolbar h2 {
+    font-size: 12px;
+  }
+  .count {
+    font-size: 9px;
+    margin: 8px 0 16px;
+  }
+  .catalog-results .grid {
+    gap: 24px 16px;
+    padding-bottom: 28px;
+  }
+  .catalog-results .card:nth-child(even) {
+    transform: translateY(28px);
+  }
+  .card {
+    padding: 0;
+  }
+  .card-art {
+    padding: 10px 6px;
+    border-radius: 22px;
+  }
+  .card-art img {
+    border-radius: 16px;
+  }
+  .card h3 {
+    font-size: 10px;
+    min-height: 0;
+    margin: 8px 4px 0;
+    line-height: 1.7;
+  }
+  .card p {
+    font-size: 12px;
+    margin-left: 4px;
+  }
+  .footer-benefits {
+    grid-template-columns: 1fr 1fr;
+    padding: 24px 12px;
+    row-gap: 24px;
+  }
+  .footer-benefits article {
+    padding: 0 12px;
+  }
+  .footer-benefits article:nth-child(3) {
+    border-left: 0;
+  }
+  .footer-brand-bar {
+    flex-wrap: wrap;
+    padding: 20px;
+    gap: 12px;
+  }
+  .footer-brand-bar span:last-child {
+    width: 100%;
+  }
+  .footer-bottom {
+    grid-template-columns: 1fr 1fr;
+    padding: 24px;
+    gap: 28px 18px;
+  }
+  .benefit-symbol {
+    width: 38px;
+    height: 38px;
+  }
+  .footer-benefits h2 {
+    font-size: 11px;
+  }
+  .footer-discover > a {
+    padding: 8px;
+    font-size: 9px;
+  }
+  .nft-page {
+    padding-top: 24px !important;
+  }
+  .nft-page .detail {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .nft-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: none;
+    width: 100%;
+  }
+  .gallery-stage {
+    order: -1;
+    padding: 0;
+    border-radius: 24px 24px 0 0;
+  }
+  .gallery-stage > img {
+    border-radius: 24px 24px 0 0;
+  }
+  .gallery-thumbnails {
+    flex-direction: row;
+    gap: 10px;
+  }
+  .gallery-thumbnails button {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+  }
+  .nft-page .detail > div:last-child {
+    background: #291a15;
+    padding: 22px 18px;
+    border-radius: 0 0 24px 24px;
+    width: 100%;
+  }
+  .nft-page .detail h1 {
+    font-size: 21px;
+  }
+  .nft-page .detail > div > .eyebrow {
+    display: none;
+  }
+  .nft-page .purchase-controls {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .purchase-controls .favorite-action,
+  .purchase-controls .favorite-login {
+    grid-column: 1 / -1;
+  }
+  .nft-description {
+    margin-top: 32px;
+  }
+  .cart-page .cart-line {
+    border-radius: 20px;
+  }
+  .checkout-items li {
+    border-radius: 12px;
+  }
+  .checkout-form {
+    gap: 20px;
+  }
+  .checkout-form textarea {
+    min-height: 100px;
+  }
+  .receipt-card {
+    border-radius: 18px 18px 0 0;
+  }
+}
+.account-nav > .mobile-nav-item {
+  display: none;
+}
+.card > .card-art {
+  padding: 20px;
+}
+@media (max-width: 700px) {
+  main:has(.marketplace-catalog) {
+    display: flow-root;
+    padding-top: 84px;
+  }
+  main:has(.marketplace-catalog) .hero {
+    margin-top: 0;
+  }
+  .hero .hero-secondary {
+    width: 56px;
+    height: 56px;
+    border: 4px solid #c3ad88;
+    border-radius: 16px;
+  }
+  .account-nav > .mobile-nav-item {
+    display: grid;
+  }
+  .card > .card-art {
+    padding: 10px 6px;
+  }
+}
+.quantity-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+}
+.quantity-stepper button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 30px;
+  border: 0;
+  border-radius: 14px;
+  background: #d79048;
+  color: #170f0c;
+  padding: 0;
+}
+.quantity-stepper button:disabled {
+  opacity: 0.4;
+}
+.purchase-controls .quantity-stepper input {
+  width: 32px;
+  border: 0;
+  padding: 4px 0;
+  text-align: center;
+  appearance: textfield;
+  background: transparent;
+}
+.quantity-stepper input::-webkit-inner-spin-button {
+  appearance: none;
+}
+.purchase-controls > .field:first-child select {
+  max-width: 280px;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+.auth-brand {
+  display: none;
+}
+.collection-story {
+  grid-template-columns: 1fr 1fr;
+  background: transparent;
+  padding: 0 !important;
+  gap: 32px;
+  margin: 40px 0 80px;
+}
+.collection-promo {
+  display: grid;
+  grid-template-columns: 46% minmax(0, 1fr);
+  background: #291a15;
+  border-radius: 6px;
+  overflow: hidden;
+  align-items: center;
+}
+.collection-promo > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+}
+.collection-promo > div {
+  padding: 24px;
+  text-align: center;
+}
+.collection-story .collection-promo h2 {
+  font-size: 17px;
+  line-height: 1.6;
+  letter-spacing: 0;
+  margin: 0 0 14px;
+}
+.collection-story .collection-promo p {
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 0 0 16px;
+}
+.collection-promo a {
+  padding: 8px 14px;
+  font-size: 11px;
+}
+@media (max-width: 950px) {
+  .collection-story {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .collection-promo {
+    min-height: 240px;
+  }
+}
+@media (max-width: 700px) {
+  .auth-dialog {
+    inset: 0;
+    transform: none;
+    width: 100%;
+    max-height: 100dvh;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    background: #170f0c;
+    padding: 48px 28px 32px;
+    box-shadow: none;
+  }
+  .auth-brand {
+    display: block;
+    text-align: center;
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    margin: 24px 0 56px;
+  }
+  .auth-dialog .auth-tabs {
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+  .auth-dialog > p {
+    display: none;
+  }
+  .auth-form .field > span,
+  .auth-form .field > label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .auth-form .field {
+    gap: 0;
+  }
+  .auth-form .field input {
+    border-radius: 10px;
+    padding: 14px;
+    background: #170f0c;
+    font-size: 12px;
+  }
+  .auth-form .password-input input {
+    padding-right: 46px;
+  }
+  .auth-form {
+    gap: 16px;
+  }
+  .auth-form > button {
+    min-height: 52px;
+    margin-top: 20px;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  .auth-social {
+    margin-top: 30px;
+  }
+  .auth-social button {
+    min-height: 40px;
+  }
+  .auth-demo {
+    margin-bottom: 16px;
+  }
+  .collection-story {
+    margin: 24px 0 44px;
+  }
+  .collection-promo {
+    grid-template-columns: 40% minmax(0, 1fr);
+    min-height: 200px;
+  }
+  .collection-promo > div {
+    padding: 18px 14px;
+  }
+  .collection-story .collection-promo h2 {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .collection-story .collection-promo p {
+    font-size: 10px;
+    margin-bottom: 12px;
+  }
+  .collection-promo a {
+    padding: 8px 12px;
+    font-size: 10px;
+  }
+  .cart-line .cart-identity img {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+  }
+  .cart-quantity button {
+    width: 28px;
+    height: 36px;
+  }
+  .checkout-form select,
+  .checkout-form input {
+    min-height: 44px;
+  }
+  .checkout-form .checkout-address {
+    background: #291a15;
+    padding: 14px;
+    border-radius: 14px;
+  }
+  .checkout-form .wallet-actions {
+    display: flex;
+    align-items: stretch;
+  }
+  .checkout-form .wallet-actions > button {
+    min-height: 44px;
+  }
+}
+/* Keep the primary profile fields aligned with the reference's three rows. */
+@media (min-width: 701px) {
+  .profile-forms {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+    align-items: start;
+  }
+  .profile-data-form {
+    display: contents;
+  }
+  .profile-data-form .profile-bio {
+    grid-column: 2;
+    grid-row: 4;
+  }
+  .profile-data-form > button {
+    grid-column: 2;
+    grid-row: 5;
+  }
+  .profile-data-form > .form-error {
+    grid-column: 1 / -1;
+  }
+  .profile-forms .password-form {
+    grid-column: 1;
+    grid-row: 4 / span 3;
+    max-width: none;
+    margin: 0;
+  }
+}
+.card p span svg {
+  display: none;
+}
+.wallet-form > button {
+  grid-column: 1;
 }

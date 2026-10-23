@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import type { Catalog, CatalogSearch } from "../domain";
 import { api } from "../lib/api";
 import { Button } from "../components/ui/button";
@@ -30,6 +30,23 @@ export function MarketplaceCatalog({
   const change = onChange;
   return (
     <>
+      <button
+        className="mobile-filter-trigger"
+        aria-label="Abrir filtros da coleção"
+        onClick={() => {
+          const filters =
+            document.querySelector<HTMLDetailsElement>(".filter-disclosure");
+          if (filters) {
+            filters.open = true;
+            filters.scrollIntoView({ behavior: "instant", block: "start" });
+            filters
+              .querySelector<HTMLButtonElement>(".category-links button")
+              ?.focus();
+          }
+        }}
+      >
+        <SlidersHorizontal size={20} />
+      </button>
       <Hero />
       <section id="catalog" className="marketplace-catalog">
         <CatalogFilters
@@ -78,13 +95,15 @@ export function MarketplaceCatalog({
                       className="card"
                       key={n.id}
                     >
-                      <Artwork
-                        src={n.image}
-                        alt={n.name}
-                        loading="lazy"
-                        width="600"
-                        height="600"
-                      />
+                      <div className="card-art">
+                        <Artwork
+                          src={n.image}
+                          alt={n.name}
+                          loading="lazy"
+                          width="600"
+                          height="600"
+                        />
+                      </div>
                       <div>
                         <h3>{n.name}</h3>
                         <p>
@@ -125,29 +144,49 @@ export function MarketplaceCatalog({
         </div>
       </section>
       <section id="about-kurio" className="collection-story">
-        <div>
-          <p className="eyebrow">UM NOVO UNIVERSO CRIATIVO</p>
-          <h2>
-            Arte digital selecionada.
-            <br />
-            Possibilidades extraordinárias.
-          </h2>
-          <p>
-            Uma coleção de personagens, perspectivas e histórias. Encontre a
-            peça que combina com a sua.
-          </p>
-          <Button asChild>
-            <a href="#catalog">
-              CONHECER A COLEÇÃO <ArrowUpRight size={16} />
-            </a>
-          </Button>
-        </div>
-        <Artwork
-          src="/artwork/kurio/ape-4-480.webp"
-          alt="Ape dourado com fones de ouvido"
-          loading="lazy"
-          sizes="(max-width: 700px) 85vw, 350px"
-        />
+        {[
+          {
+            image: 1,
+            title: "Lançamentos gênesis de edição limitada",
+            description:
+              "Colecione edições especiais dos criadores e descubra sua próxima peça.",
+            category: "Art",
+          },
+          {
+            image: 3,
+            title: "Arte digital selecionada e muito mais",
+            description:
+              "Explore novos artistas e coleções que definem a cultura digital.",
+            category: "Collectibles",
+          },
+        ].map((item) => (
+          <article className="collection-promo" key={item.image}>
+            <Artwork
+              src={`/artwork/kurio/ape-${item.image}-480.webp`}
+              alt=""
+              loading="lazy"
+              sizes="(max-width:700px) 130px, 280px"
+            />
+            <div>
+              <h2>{item.title}</h2>
+              <p>{item.description}</p>
+              <Button asChild>
+                <Link
+                  to="/"
+                  search={{
+                    q: "",
+                    category: item.category,
+                    sort: "recent",
+                    page: 1,
+                  }}
+                  hash="catalog"
+                >
+                  EXPLORAR <ArrowUpRight size={14} />
+                </Link>
+              </Button>
+            </div>
+          </article>
+        ))}
       </section>
     </>
   );

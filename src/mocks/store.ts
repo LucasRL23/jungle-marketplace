@@ -95,7 +95,7 @@ function fixtureNft(name: string, i: number): Nft {
       `${1 + (i % 4)}.${String((i * 17 + 25) % 100).padStart(2, "0")}`,
     stock: i === 7 ? 0 : 8 + i,
     version: 1,
-    image: `/artwork/kurio/ape-${[1, 2, 3, 4, 2, 3, 4, 1, 4][i % 9]}-480.webp`,
+    image: `/artwork/kurio/ape-${[1, 2, 3, 2, 2, 3, 4, 4, 4][i % 9]}-480.webp`,
   };
 }
 export const publicUser = (u: StoredUser): User => ({
@@ -149,7 +149,14 @@ export async function getDb(): Promise<Database> {
         // historical quotes or pending orders. Cart versions require a new review.
         let migrated = false;
         db.inventory = db.inventory.map((n, i) => {
-          if (!n.image.endsWith(".svg")) return n;
+          if (!n.image.endsWith(".svg")) {
+            const image = fixtureNft(names[i] || n.name, i).image;
+            if (n.image.startsWith("/artwork/kurio/") && n.image !== image) {
+              migrated = true;
+              return { ...n, image, version: n.version + 1 };
+            }
+            return n;
+          }
           migrated = true;
           return {
             ...fixtureNft(names[i] || n.name, i),

@@ -322,6 +322,7 @@ export function ProfileEditor() {
               pattern="[a-zA-Z0-9][a-zA-Z0-9._\x2d]{2,29}"
               defaultValue={data.username}
               autoComplete="username"
+              aria-describedby={update.error ? "profile-error" : undefined}
             />
           </label>
           <label className="field">
@@ -341,6 +342,7 @@ export function ProfileEditor() {
               maxLength={67}
               defaultValue={data.ens}
               placeholder="colecionador.eth"
+              aria-describedby={update.error ? "profile-error" : undefined}
             />
           </label>
           <label className="field">
@@ -392,6 +394,9 @@ export function ProfileEditor() {
             label="Confirmar nova senha"
             autoComplete="new-password"
             minLength={8}
+            errorId={
+              password.error || passwordError ? "password-error" : undefined
+            }
           />
           <small>Ao menos 8 caracteres, incluindo letras e números.</small>
           {(passwordError || password.error) && (

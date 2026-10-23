@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { isAxiosError } from "axios";
+import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Breadcrumb } from "./components/breadcrumb";
 import { DetailGallery } from "./features/detail-gallery";
@@ -72,8 +73,18 @@ function Layout() {
           >
             Mercado
           </a>
-          <a href="/#about-kurio">Sobre a Kurio</a>
+          <button disabled title="Criadores indisponível nesta demonstração">
+            Criadores
+          </button>
+          <a href="/#about-kurio">Aprenda</a>
         </nav>
+        <a
+          className="header-search"
+          href="/#catalog"
+          aria-label="Explorar coleções"
+        >
+          <Search size={20} />
+        </a>
         <AccountNavigation />
       </header>
       <SessionGuard />
@@ -131,15 +142,17 @@ function DetailPage() {
         <div>
           <p className="eyebrow">{n.category}</p>
           <h1>{n.name}</h1>
+          <h2>{n.price} ETH</h2>
           <p>Criado por {n.creator}</p>
           <p className="nft-intro">
             Uma peça da coleção Kurio Editions. Explore seus detalhes e escolha
             uma edição para a sua coleção.
           </p>
-          <h2>{n.price} ETH</h2>
           <p>{n.stock} edições disponíveis</p>
-          <FavoriteButton id={n.id} name={n.name} />
-          <PurchaseControls nft={n} />
+          <PurchaseControls
+            nft={n}
+            favorite={<FavoriteButton id={n.id} name={n.name} />}
+          />
         </div>
       </div>
       <div className="nft-description">

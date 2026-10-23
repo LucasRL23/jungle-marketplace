@@ -41,12 +41,14 @@ export function RelatedNfts({ exclude = [] }: { exclude?: string[] }) {
                     params={{ id: n.id }}
                     className="card"
                   >
-                    <Artwork
-                      src={n.image}
-                      alt=""
-                      loading="lazy"
-                      sizes="(max-width: 700px) 170px, 230px"
-                    />
+                    <div className="card-art">
+                      <Artwork
+                        src={n.image}
+                        alt=""
+                        loading="lazy"
+                        sizes="(max-width: 700px) 170px, 230px"
+                      />
+                    </div>
                     <div>
                       <h3>{n.name}</h3>
                       <p>{n.price} ETH</p>

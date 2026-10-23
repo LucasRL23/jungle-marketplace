@@ -15,6 +15,7 @@ const views = [
   { id: "full", label: "Arte completa" },
   { id: "face", label: "Detalhe do rosto" },
   { id: "outfit", label: "Detalhe do traje" },
+  { id: "accessory", label: "Detalhe dos óculos" },
 ];
 export function DetailGallery({ nft }: { nft: Nft }) {
   const [view, setView] = useState("full");

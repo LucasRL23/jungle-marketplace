@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useId } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -28,6 +28,12 @@ import {
   BadgeCheck,
   Clock3,
   CircleX,
+  ShoppingCart,
+  Home,
+  Heart,
+  Gem,
+  UserRound,
+  LogIn,
 } from "lucide-react";
 import { MarketplaceCatalog } from "./catalog";
 import { PasswordField } from "../components/ui/password-field";
@@ -39,9 +45,9 @@ import {
   DialogClose,
 } from "../components/ui/dialog";
 
-function ErrorNotice({ error }: { error: unknown }) {
+function ErrorNotice({ error, id }: { error: unknown; id?: string }) {
   return error ? (
-    <p className="form-error" role="alert">
+    <p className="form-error" role="alert" id={id}>
       {errorMessage(error)}
     </p>
   ) : null;
@@ -61,6 +67,7 @@ function Field({
   type = "text",
   defaultValue,
   minLength,
+  errorId,
   children,
 }: {
   name: string;
@@ -68,6 +75,7 @@ function Field({
   type?: string;
   defaultValue?: string;
   minLength?: number;
+  errorId?: string;
   children?: ReactNode;
 }) {
   return (
@@ -78,8 +86,10 @@ function Field({
           name={name}
           type={type}
           defaultValue={defaultValue}
+          placeholder={label}
           required
           minLength={minLength}
+          aria-describedby={errorId}
         />
       )}
     </label>
@@ -146,6 +156,7 @@ function LogoutButton() {
   return (
     <button
       className="logout-button"
+      aria-label="Sair"
       onClick={() => {
         const token = localStorage.getItem("jungle-token");
         localStorage.removeItem("jungle-token");
@@ -171,15 +182,47 @@ export function AccountNavigation() {
   const collectorArea = path === "/account" || path === "/wallets";
   return (
     <div className="account-nav">
-      <Link to="/cart">Carrinho</Link>
+      <Link
+        className="mobile-nav-item"
+        to="/"
+        search={{ q: "", category: "", sort: "recent", page: 1 }}
+        aria-label="Início"
+      >
+        <Home size={21} />
+      </Link>
+      <Link
+        className="mobile-nav-item"
+        to="/account"
+        hash="favorites"
+        aria-label="Meus favoritos"
+      >
+        <Heart size={21} />
+      </Link>
+      <a
+        className="mobile-nav-item mobile-explore"
+        href="/#catalog"
+        aria-label="Explorar coleção"
+      >
+        <Gem size={25} />
+      </a>
+      <Link to="/cart" aria-label="Carrinho">
+        <ShoppingCart size={21} />
+        <span className="nav-caption">Carrinho</span>
+      </Link>
       {session ? (
         <>
-          <Link to="/account">{session.user.name.split(" ")[0]}</Link>
+          <Link to="/account" aria-label={session.user.name.split(" ")[0]}>
+            <UserRound className="mobile-nav-icon" size={21} />
+            <span className="account-caption">
+              {session.user.name.split(" ")[0]}
+            </span>
+          </Link>
           {!collectorArea && <LogoutButton />}
         </>
       ) : (
-        <Link to="/login" search={{ returnTo: "/" }}>
-          Entrar
+        <Link to="/login" aria-label="Entrar" search={{ returnTo: "/" }}>
+          <LogIn size={17} />
+          <span className="account-caption">Entrar</span>
         </Link>
       )}
     </div>
@@ -236,6 +279,11 @@ function LoginDialog({ register }: { register: boolean }) {
     }
     mutation.mutate(data);
   };
+  const authErrorId = validation
+    ? "auth-validation"
+    : mutation.error
+      ? "auth-error"
+      : undefined;
   return (
     <>
       <MarketplaceCatalog
@@ -272,6 +320,9 @@ function LoginDialog({ register }: { register: boolean }) {
               ?.focus();
           }}
         >
+          <div className="auth-brand" aria-hidden="true">
+            KURIO
+          </div>
           <DialogTitle className="sr-only">
             {register ? "Crie sua conta" : "Bem-vindo de volta"}
           </DialogTitle>
@@ -308,14 +359,21 @@ function LoginDialog({ register }: { register: boolean }) {
               key={register ? "register" : "login"}
               onSubmit={submit}
               className="form auth-form"
+              aria-describedby={authErrorId}
             >
               {register && (
                 <>
-                  <Field name="name" label="Nome completo" minLength={2} />
+                  <Field
+                    name="name"
+                    label="Nome completo"
+                    minLength={2}
+                    errorId={authErrorId}
+                  />
                   <Field
                     name="username"
                     label="Nome de usuário"
                     minLength={3}
+                    errorId={authErrorId}
                   />
                 </>
               )}
@@ -323,6 +381,8 @@ function LoginDialog({ register }: { register: boolean }) {
                 <input
                   name="email"
                   type="email"
+                  placeholder="Digite seu e-mail"
+                  aria-describedby={authErrorId}
                   autoComplete="email"
                   required
                 />
@@ -332,6 +392,7 @@ function LoginDialog({ register }: { register: boolean }) {
                 label="Senha"
                 autoComplete={register ? "new-password" : "current-password"}
                 minLength={8}
+                errorId={authErrorId}
               />
               {register && (
                 <PasswordField
@@ -339,14 +400,15 @@ function LoginDialog({ register }: { register: boolean }) {
                   label="Confirmar senha"
                   autoComplete="new-password"
                   minLength={8}
+                  errorId={authErrorId}
                 />
               )}
               {validation && (
-                <p className="form-error" role="alert">
+                <p className="form-error" role="alert" id="auth-validation">
                   {validation}
                 </p>
               )}
-              <ErrorNotice error={mutation.error} />
+              <ErrorNotice error={mutation.error} id="auth-error" />
               <Button disabled={mutation.isPending}>
                 {mutation.isPending
                   ? "Aguarde…"
@@ -378,7 +440,14 @@ function LoginDialog({ register }: { register: boolean }) {
     </>
   );
 }
-export function PurchaseControls({ nft }: { nft: Nft }) {
+export function PurchaseControls({
+  nft,
+  favorite,
+}: {
+  nft: Nft;
+  favorite?: ReactNode;
+}) {
+  const quantityId = useId();
   const [edition, setEdition] = useState<CartItem["edition"]>("standard"),
     [quantity, setQuantity] = useState(1),
     [notice, setNotice] = useState("");
@@ -420,16 +489,35 @@ export function PurchaseControls({ nft }: { nft: Nft }) {
           <option value="limited">Limited · preço em dobro</option>
         </select>
       </label>
-      <label className="field">
-        Quantidade
-        <input
-          type="number"
-          min={1}
-          max={maximum}
-          value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
-        />
-      </label>
+      <div className="field">
+        <label htmlFor={quantityId}>Quantidade</label>
+        <div className="quantity-stepper">
+          <button
+            type="button"
+            aria-label="Diminuir quantidade do NFT"
+            disabled={quantity <= 1}
+            onClick={() => setQuantity(quantity - 1)}
+          >
+            <Minus size={12} />
+          </button>
+          <input
+            id={quantityId}
+            type="number"
+            min={1}
+            max={maximum}
+            value={quantity}
+            onChange={(e) => setQuantity(Number(e.target.value))}
+          />
+          <button
+            type="button"
+            aria-label="Aumentar quantidade do NFT"
+            disabled={quantity >= maximum}
+            onClick={() => setQuantity(quantity + 1)}
+          >
+            <Plus size={12} />
+          </button>
+        </div>
+      </div>
       <Button
         disabled={
           mutation.isPending ||
@@ -447,6 +535,7 @@ export function PurchaseControls({ nft }: { nft: Nft }) {
             ? "Adicionando…"
             : "Adicionar ao carrinho"}
       </Button>
+      {favorite}
       <ErrorNotice error={mutation.error || cart.error} />
       <p role="status">{notice}</p>
       {notice && <Link to="/cart">Ver carrinho →</Link>}
@@ -1261,6 +1350,7 @@ export function WalletsPage() {
     { data: session } = useSession(),
     [editing, setEditing] = useState(""),
     [saved, setSaved] = useState(false);
+  const profile = useProfile();
   const wallet = wallets.data?.find((w) => w.id === editing);
   const mutation = useMutation({
     mutationFn: (body: Record<string, FormDataEntryValue>) =>
@@ -1316,26 +1406,57 @@ export function WalletsPage() {
           )}
           <ErrorNotice error={wallets.error} />
         </div>
-        <form key={editing} className="form wallet-form" onSubmit={submit}>
+        <form
+          key={editing}
+          className="form wallet-form"
+          onSubmit={submit}
+          aria-describedby={mutation.error ? "wallet-error" : undefined}
+        >
           <h2>{editing ? "Editar carteira" : "Nova carteira"}</h2>
+          <label className="field">
+            Nome de exibição
+            <input value={profile.data?.name || ""} readOnly />
+          </label>
           <Field
             name="label"
             label="Nome da carteira"
             defaultValue={wallet?.label}
             minLength={2}
-          />
-          <Field
-            name="address"
-            label="Endereço da carteira"
-            defaultValue={wallet?.address}
+            errorId={mutation.error ? "wallet-error" : undefined}
           />
           <Field name="network" label="Rede">
-            <select name="network" defaultValue={wallet?.network || "Ethereum"}>
+            <select
+              name="network"
+              defaultValue={wallet?.network || "Ethereum"}
+              aria-describedby={mutation.error ? "wallet-error" : undefined}
+            >
               <option>Ethereum</option>
               <option>Polygon</option>
             </select>
           </Field>
-          <ErrorNotice error={mutation.error} />
+          <label className="field">
+            Nome do perfil
+            <input value={profile.data?.username || ""} readOnly />
+          </label>
+          <Field
+            name="address"
+            label="Endereço da carteira"
+            defaultValue={wallet?.address}
+            errorId={mutation.error ? "wallet-error" : undefined}
+          />
+          <label className="field">
+            Nome ENS do perfil
+            <input
+              value={profile.data?.ens || ""}
+              placeholder="colecionador.eth"
+              readOnly
+            />
+          </label>
+          <label className="field">
+            E-mail do perfil
+            <input type="email" value={profile.data?.email || ""} readOnly />
+          </label>
+          <ErrorNotice error={mutation.error} id="wallet-error" />
           <Button
             disabled={
               mutation.isPending ||

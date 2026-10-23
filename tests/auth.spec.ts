@@ -40,6 +40,10 @@ test("auth tabs preserve destination and clear credentials and errors", async ({
   await expect(page.getByRole("alert")).toContainText(
     "E-mail ou senha incorretos",
   );
+  await expect(page.getByLabel("E-mail", { exact: true })).toHaveAttribute(
+    "aria-describedby",
+    "auth-error",
+  );
   await page.getByRole("link", { name: "Criar conta", exact: true }).click();
   await expect(page).toHaveURL(
     (url) =>

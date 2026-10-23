@@ -107,6 +107,57 @@ test("visitor cart survives refresh and login; coupon and confirmed receipt", as
     page.getByRole("heading", { name: "Compra confirmada", exact: true }),
   ).toHaveCount(0);
 });
+test("edition limits, quantity changes and coupon removal keep API totals exact", async ({
+  page,
+}) => {
+  await page.goto("/nft/nft-1");
+  await page
+    .getByRole("combobox", { name: "Edição", exact: true })
+    .selectOption("limited");
+  const more = page.getByRole("button", {
+    name: "Aumentar quantidade do NFT",
+    exact: true,
+  });
+  await more.click();
+  await more.click();
+  await expect(page.getByLabel("Quantidade", { exact: true })).toHaveValue("3");
+  await expect(more).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Adicionar ao carrinho", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("NFT adicionado");
+  await page.goto("/cart");
+  const total = page.locator(".cart-summary .totals dd").last();
+  await expect(total).toHaveText("7.1425 ETH");
+  await page
+    .getByRole("button", {
+      name: "Diminuir quantidade de Emerald Ape #042",
+      exact: true,
+    })
+    .click();
+  await expect(total).toHaveText("4.7625 ETH");
+  await page.getByLabel("Cupom", { exact: true }).fill("EXPIRED");
+  await page
+    .getByRole("button", { name: "Aplicar cupom", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("expirou");
+  await page.getByLabel("Cupom", { exact: true }).fill("JUNGLE10");
+  await page
+    .getByRole("button", { name: "Aplicar cupom", exact: true })
+    .click();
+  await expect(total).toHaveText("4.2865 ETH");
+  await page
+    .getByRole("button", { name: "Remover cupom", exact: true })
+    .click();
+  await expect(total).toHaveText("4.7625 ETH");
+  await page
+    .getByRole("button", { name: "Remover Emerald Ape #042", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Seu carrinho está vazio." }),
+  ).toBeVisible();
+});
+
 test("editing collector data during a quote requires a new review", async ({
   page,
 }) => {
@@ -241,12 +292,36 @@ test("register validation, wallet persistence, logout and user isolation", async
   await page.getByLabel("Endereço da carteira").fill("invalid");
   await page.getByRole("button", { name: "Salvar carteira" }).click();
   await expect(page.getByRole("alert")).toContainText("endereço");
+  await expect(page.getByLabel("Endereço da carteira")).toHaveAttribute(
+    "aria-describedby",
+    "wallet-error",
+  );
   await page.getByLabel("Endereço da carteira").fill(`0x${"a".repeat(40)}`);
   await page.getByRole("button", { name: "Salvar carteira" }).click();
   await expect(page.getByRole("status")).toContainText("Carteira salva");
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "My wallet", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Nome da carteira").fill("Secondary vault");
+  await page.getByLabel("Endereço da carteira").fill(`0x${"b".repeat(40)}`);
+  await page
+    .getByRole("combobox", { name: "Rede", exact: true })
+    .selectOption("Polygon");
+  await page
+    .getByRole("button", { name: "Salvar carteira", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Editar Secondary vault", exact: true })
+    .click();
+  await page.getByLabel("Nome da carteira").fill("Updated vault");
+  await page
+    .getByRole("button", { name: "Salvar carteira", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Carteira salva");
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Updated vault", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Sair", exact: true }).click();
   await page.goto("/account");

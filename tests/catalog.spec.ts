@@ -1,4 +1,27 @@
 import { test, expect } from "@playwright/test";
+test("price sorting changes the catalog and survives refresh", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByLabel("Ordenação", { exact: true }).selectOption("price-asc");
+  await expect(page).toHaveURL(/sort=price-asc/);
+  await expect(page.locator(".catalog-results .card h3").first()).toHaveText(
+    "Golden Signal #160",
+  );
+  await page
+    .getByLabel("Ordenação", { exact: true })
+    .selectOption("price-desc");
+  await expect(page.locator(".catalog-results .card h3").first()).toHaveText(
+    "Electric Soul",
+  );
+  await page.reload();
+  await expect(page.getByLabel("Ordenação", { exact: true })).toHaveValue(
+    "price-desc",
+  );
+  await expect(page.locator(".catalog-results .card h3").first()).toHaveText(
+    "Electric Soul",
+  );
+});
 test("artwork views and zoom are keyboard accessible", async ({ page }) => {
   await page.goto("/nft/nft-1");
   await page
@@ -32,6 +55,10 @@ test("price bounds combine with category and search and survive history", async 
   page,
 }) => {
   await page.goto("/");
+  if ((page.viewportSize()?.width || 1440) < 701)
+    await page
+      .getByRole("button", { name: "Abrir filtros da coleção" })
+      .click();
   await page
     .getByRole("button", { name: "Fotografia 08", exact: true })
     .click();
@@ -95,6 +122,10 @@ test("filters survive refresh and browser history", async ({ page }) => {
   await expect(
     page.getByText("24 obras encontradas", { exact: true }),
   ).toBeVisible();
+  if ((page.viewportSize()?.width || 1440) < 701)
+    await page
+      .getByRole("button", { name: "Abrir filtros da coleção" })
+      .click();
   await page
     .getByRole("button", { name: "Fotografia 08", exact: true })
     .click();

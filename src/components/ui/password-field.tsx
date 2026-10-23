@@ -24,6 +24,7 @@ export function PasswordField({
           name={name}
           type={visible ? "text" : "password"}
           autoComplete={autoComplete}
+          placeholder={label}
           required
           minLength={minLength}
           aria-describedby={errorId}
