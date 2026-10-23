@@ -46,6 +46,12 @@ interface Database {
   inventory: Nft[];
 }
 const storageKey = "jungle-database-v2";
+// Fixture hashes use the same PBKDF2/SHA-256/100000 parameters as live forms.
+// Precomputing known seed data avoids deriving two accounts on every fresh visit.
+const fixturePasswordHashes = [
+  "daf083385ff8142d995ff9f7f0d5678a19623b4cfa303c7e208ad1102de5aef6",
+  "f7a473546ae0cc2f4d95de499856849fdd28766d771f9bb5cdece1be83ab75e7",
+];
 let database: Promise<Database> | undefined;
 const names = [
   "Emerald Ape #042",
@@ -187,7 +193,7 @@ export async function getDb(): Promise<Database> {
         favorites: [],
         email: i === 0 ? "alex@example.test" : "luna@example.test",
         salt,
-        passwordHash: await passwordHash("Jungle123!", salt),
+        passwordHash: fixturePasswordHashes[i],
         wallets: [
           {
             id: `wallet-${i + 1}`,

@@ -88,7 +88,7 @@ export function MarketplaceCatalog({
                 </div>
               ) : (
                 <div className="grid">
-                  {data.items.map((n) => (
+                  {data.items.map((n, index) => (
                     <Link
                       to="/nft/$id"
                       params={{ id: n.id }}
@@ -99,7 +99,8 @@ export function MarketplaceCatalog({
                         <Artwork
                           src={n.image}
                           alt={n.name}
-                          loading="lazy"
+                          loading={index < 3 ? "eager" : "lazy"}
+                          fetchPriority={index === 0 ? "high" : "auto"}
                           width="600"
                           height="600"
                         />

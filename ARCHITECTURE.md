@@ -8,13 +8,18 @@
 - `mocks/store.ts`: estado persistente da simulação e regras de cotação, reserva e liquidação.
 - `mocks/handlers.ts`: API REST MSW. Componentes e hooks não fornecem respostas fictícias.
 - `features/hooks.ts`: sessão, carrinho e carteiras via Query.
-- `features/commerce.tsx`: fluxo de conta e compra.
-- `features/collector.tsx`: favoritos, perfil, avatar e senha.
+- `features/session.tsx`: recuperação/expiração da sessão, navegação de conta e logout.
+- `features/commerce.tsx`: autenticação, carrinho, checkout, recibo e carteiras, carregados ao acessar suas rotas.
+- `features/purchase-controls.tsx`: edição/quantidade e inclusão de NFT no carrinho.
+- `features/favorite-button.tsx`: interação otimista de favorito usada no detalhe.
+- `features/collector.tsx`: perfil, avatar, senha e lista de favoritos.
 - `features/realtime.tsx`: cliente Socket.IO e reconciliação do cache.
 - `mocks/socket.ts` e `mocks/events.ts`: transporte MSW e emissão de eventos da simulação.
 - `features/catalog.tsx`: catálogo reutilizado no início e como fundo dos diálogos de autenticação.
 - `features/detail-gallery.tsx`: enquadramentos da arte e diálogo de ampliação.
-- `App.tsx`: layout, detalhe e TanStack Router; rotas privadas usam beforeLoad.
+- `features/detail-page.tsx`: consulta e composição do detalhe, carregado por rota.
+- `components/commerce-fields.tsx`: campos, erros associados e skeletons compartilhados.
+- `App.tsx`: layout e TanStack Router com fronteiras lazy/Suspense; rotas privadas usam beforeLoad.
 - `components/ui`: Button e Dialog locais no padrão shadcn/ui (Radix Slot/Dialog, cva), além do campo de senha reutilizável.
 
 ## Contratos REST implementados
@@ -59,6 +64,16 @@ Após refresh, o banco simulado retoma os temporizadores persistidos dos pedidos
 ## Cache e retries
 
 Catálogo: chave inclui todos os parâmetros, staleTime 30s; detalhe inclui id. Queries repetem no máximo duas vezes para falha de transporte/5xx; mutations não repetem automaticamente. Sessão, cotação e pedido não repetem automaticamente. Carrinho/cotação possuem versão nas chaves e mutations atualizam o cache; confirmação invalida carrinho, catálogo, detalhe e lista de pedidos.
+
+## Carregamento inicial e performance
+
+O build emite `modulepreload` para os chunks iniciais App/MSW; a fonte local usa o carregamento normal da folha de estilos. O [contrato modulepreload do HTML](https://html.spec.whatwg.org/multipage/links.html#link-type-modulepreload) permite preparar o módulo para execução posterior; o import de App continua após `worker.start()` para preservar a interceptação do Socket.IO. A configuração usa o [hook transformIndexHtml do Vite](https://vite.dev/guide/api-plugin.html#transformindexhtml), com os nomes reais dos arquivos gerados, e está versionada em `vite.config.ts`.
+
+As três primeiras imagens do catálogo carregam eager, com prioridade alta para a primeira; demais itens permanecem lazy. Com o banner mobile compacto, o primeiro card aparece na primeira dobra e pode ser o LCP. O srcSet considera a dimensão real das imagens em cada largura. A classe de rota `discovery-page` aplica o layout de início/acesso sem seletores relacionais sobre o conteúdo assíncrono. Essas políticas são usadas no build publicado, com os mesmos mocks, arquivos e funcionalidades auditados.
+
+Formulários de conta/compra e o detalhe são divididos por rota com React.lazy/Suspense. Sessão, consultas de catálogo e a conexão Socket.IO continuam no layout inicial; dados e regras de compra não foram movidos para componentes visuais. Os módulos de formulário e de galeria são buscados quando suas rotas são acessadas. A suíte valida login, retomada da compra e eventos Socket.IO com essa divisão.
+
+O layout reserva a altura da primeira dobra enquanto a rota carrega, impedindo que o rodapé apareça antes do conteúdo. O detalhe possui um skeleton com as dimensões da galeria e das informações, em vez da grade de catálogo. Os hashes das duas contas de fixtures são pré-calculados com os mesmos salts, PBKDF2/SHA-256 e 100000 iterações usados na autenticação; cadastro e alteração de senha continuam derivando hashes em tempo de execução. Isso evita preparar credenciais conhecidas a cada primeiro acesso ao mock.
 
 ## Desvios atuais
 

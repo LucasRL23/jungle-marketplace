@@ -1,9 +1,11 @@
-import { useEffect, useState, useRef, useId } from "react";
-import type { FormEvent, ReactNode } from "react";
+import { ErrorNotice, Loading, Field } from "../components/commerce-fields";
+import { LogoutButton } from "./session";
+import { useEffect, useState, useRef } from "react";
+import type { FormEvent } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { CartItem, LoginResult, Nft, Order, Quote } from "../domain";
-import { api, clearPrivateData, errorMessage, queryClient } from "../lib/api";
+import type { LoginResult, Order, Quote } from "../domain";
+import { api, clearPrivateData, queryClient } from "../lib/api";
 import { Button } from "../components/ui/button";
 import {
   useCart,
@@ -20,7 +22,6 @@ import { RelatedNfts } from "./related-nfts";
 import { ProfileEditor, FavoritesPanel } from "./collector";
 import { AccountShell } from "./account-shell";
 import {
-  LogOut,
   X,
   Plus,
   Minus,
@@ -28,12 +29,6 @@ import {
   BadgeCheck,
   Clock3,
   CircleX,
-  ShoppingCart,
-  Home,
-  Heart,
-  Gem,
-  UserRound,
-  LogIn,
 } from "lucide-react";
 import { MarketplaceCatalog } from "./catalog";
 import { PasswordField } from "../components/ui/password-field";
@@ -45,56 +40,6 @@ import {
   DialogClose,
 } from "../components/ui/dialog";
 
-function ErrorNotice({ error, id }: { error: unknown; id?: string }) {
-  return error ? (
-    <p className="form-error" role="alert" id={id}>
-      {errorMessage(error)}
-    </p>
-  ) : null;
-}
-function Loading({ label = "Carregando" }: { label?: string }) {
-  return (
-    <div
-      role="status"
-      aria-label={label}
-      className="skeleton summary-skeleton"
-    />
-  );
-}
-function Field({
-  name,
-  label,
-  type = "text",
-  defaultValue,
-  minLength,
-  errorId,
-  children,
-}: {
-  name: string;
-  label: string;
-  type?: string;
-  defaultValue?: string;
-  minLength?: number;
-  errorId?: string;
-  children?: ReactNode;
-}) {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      {children || (
-        <input
-          name={name}
-          type={type}
-          defaultValue={defaultValue}
-          placeholder={label}
-          required
-          minLength={minLength}
-          aria-describedby={errorId}
-        />
-      )}
-    </label>
-  );
-}
 const safeReturn = (value: string | null) =>
   value?.startsWith("/") &&
   !value.startsWith("//") &&
@@ -103,131 +48,6 @@ const safeReturn = (value: string | null) =>
     ? value
     : "/";
 
-export function SessionGuard() {
-  const { data: session } = useSession();
-  const path = useRouterState({ select: (s) => s.location.href });
-  useEffect(() => {
-    const expired = () => {
-      if (
-        ["/checkout", "/account", "/wallets", "/orders"].some((p) =>
-          path.startsWith(p),
-        )
-      )
-        window.location.assign(`/login?returnTo=${encodeURIComponent(path)}`);
-    };
-    const timer = session
-      ? window.setTimeout(
-          () => {
-            localStorage.removeItem("jungle-token");
-            void clearPrivateData();
-            queryClient.setQueryData(["session"], null);
-            expired();
-          },
-          Math.max(0, session.expiresAt - Date.now()),
-        )
-      : undefined;
-    window.addEventListener("jungle-session-expired", expired);
-    const storage = (e: StorageEvent) => {
-      if (e.key === "jungle-token") {
-        void clearPrivateData();
-        void queryClient.invalidateQueries({ queryKey: ["session"] });
-        expired();
-      }
-    };
-    window.addEventListener("storage", storage);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("jungle-session-expired", expired);
-      window.removeEventListener("storage", storage);
-    };
-  }, [session, path]);
-  return null;
-}
-function LogoutButton() {
-  const router = useRouter();
-  const logout = useMutation({
-    mutationFn: (token: string | null) =>
-      api.post(
-        "/logout",
-        {},
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
-      ),
-  });
-  return (
-    <button
-      className="logout-button"
-      aria-label="Sair"
-      onClick={() => {
-        const token = localStorage.getItem("jungle-token");
-        localStorage.removeItem("jungle-token");
-        void queryClient.cancelQueries({ queryKey: ["session"] });
-        void clearPrivateData();
-        queryClient.setQueryData(["session"], null);
-        logout.mutate(token);
-        void router.navigate({
-          to: "/",
-          search: { q: "", category: "", sort: "recent", page: 1 },
-        });
-      }}
-      disabled={logout.isPending}
-    >
-      <LogOut size={16} />
-      Sair
-    </button>
-  );
-}
-export function AccountNavigation() {
-  const { data: session } = useSession();
-  const path = useRouterState({ select: (s) => s.location.pathname });
-  const collectorArea = path === "/account" || path === "/wallets";
-  return (
-    <div className="account-nav">
-      <Link
-        className="mobile-nav-item"
-        to="/"
-        search={{ q: "", category: "", sort: "recent", page: 1 }}
-        aria-label="Início"
-      >
-        <Home size={21} />
-      </Link>
-      <Link
-        className="mobile-nav-item"
-        to="/account"
-        hash="favorites"
-        aria-label="Meus favoritos"
-      >
-        <Heart size={21} />
-      </Link>
-      <a
-        className="mobile-nav-item mobile-explore"
-        href="/#catalog"
-        aria-label="Explorar coleção"
-      >
-        <Gem size={25} />
-      </a>
-      <Link to="/cart" aria-label="Carrinho">
-        <ShoppingCart size={21} />
-        <span className="nav-caption">Carrinho</span>
-      </Link>
-      {session ? (
-        <>
-          <Link to="/account" aria-label={session.user.name.split(" ")[0]}>
-            <UserRound className="mobile-nav-icon" size={21} />
-            <span className="account-caption">
-              {session.user.name.split(" ")[0]}
-            </span>
-          </Link>
-          {!collectorArea && <LogoutButton />}
-        </>
-      ) : (
-        <Link to="/login" aria-label="Entrar" search={{ returnTo: "/" }}>
-          <LogIn size={17} />
-          <span className="account-caption">Entrar</span>
-        </Link>
-      )}
-    </div>
-  );
-}
 const authCatalog = {
   q: "",
   category: "",
@@ -438,108 +258,6 @@ function LoginDialog({ register }: { register: boolean }) {
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-export function PurchaseControls({
-  nft,
-  favorite,
-}: {
-  nft: Nft;
-  favorite?: ReactNode;
-}) {
-  const quantityId = useId();
-  const [edition, setEdition] = useState<CartItem["edition"]>("standard"),
-    [quantity, setQuantity] = useState(1),
-    [notice, setNotice] = useState("");
-  const cart = useCart();
-  const token = localStorage.getItem("jungle-token");
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const old =
-        cart.data?.items.find(
-          (i) => i.nftId === nft.id && i.edition === edition,
-        )?.quantity || 0;
-      return (
-        await api.patch("/cart", {
-          nftId: nft.id,
-          edition,
-          quantity: old + quantity,
-        })
-      ).data;
-    },
-    onSuccess: (data) => {
-      if (localStorage.getItem("jungle-token") !== token) return;
-      queryClient.setQueryData(cart.queryKey, data);
-      setNotice("NFT adicionado ao carrinho.");
-    },
-  });
-  const maximum = edition === "limited" ? Math.min(3, nft.stock) : nft.stock;
-  return (
-    <div className="purchase-controls">
-      <label className="field">
-        Edição
-        <select
-          value={edition}
-          onChange={(e) => {
-            setEdition(e.target.value as CartItem["edition"]);
-            setQuantity(1);
-          }}
-        >
-          <option value="standard">Standard · {nft.price} ETH</option>
-          <option value="limited">Limited · preço em dobro</option>
-        </select>
-      </label>
-      <div className="field">
-        <label htmlFor={quantityId}>Quantidade</label>
-        <div className="quantity-stepper">
-          <button
-            type="button"
-            aria-label="Diminuir quantidade do NFT"
-            disabled={quantity <= 1}
-            onClick={() => setQuantity(quantity - 1)}
-          >
-            <Minus size={12} />
-          </button>
-          <input
-            id={quantityId}
-            type="number"
-            min={1}
-            max={maximum}
-            value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
-          />
-          <button
-            type="button"
-            aria-label="Aumentar quantidade do NFT"
-            disabled={quantity >= maximum}
-            onClick={() => setQuantity(quantity + 1)}
-          >
-            <Plus size={12} />
-          </button>
-        </div>
-      </div>
-      <Button
-        disabled={
-          mutation.isPending ||
-          cart.isPending ||
-          maximum === 0 ||
-          !Number.isInteger(quantity) ||
-          quantity < 1 ||
-          quantity > maximum
-        }
-        onClick={() => mutation.mutate()}
-      >
-        {maximum === 0
-          ? "Esgotado"
-          : mutation.isPending
-            ? "Adicionando…"
-            : "Adicionar ao carrinho"}
-      </Button>
-      {favorite}
-      <ErrorNotice error={mutation.error || cart.error} />
-      <p role="status">{notice}</p>
-      {notice && <Link to="/cart">Ver carrinho →</Link>}
-    </div>
   );
 }
 function Totals({ quote }: { quote: Quote }) {

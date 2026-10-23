@@ -2281,10 +2281,10 @@ select {
     width: 20px;
     height: 20px;
   }
-  main:has(.marketplace-catalog) {
+  main.discovery-page {
     position: relative;
   }
-  main:has(.marketplace-catalog) .catalog-search {
+  main.discovery-page .catalog-search {
     position: absolute;
     top: 24px;
     left: 0;
@@ -2297,7 +2297,7 @@ select {
     border-radius: 12px;
     padding: 12px;
   }
-  main:has(.marketplace-catalog) .catalog-search input {
+  main.discovery-page .catalog-search input {
     font-size: 12px;
     background: transparent;
   }
@@ -2570,11 +2570,11 @@ select {
   padding: 20px;
 }
 @media (max-width: 700px) {
-  main:has(.marketplace-catalog) {
+  main.discovery-page {
     display: flow-root;
     padding-top: 84px;
   }
-  main:has(.marketplace-catalog) .hero {
+  main.discovery-page .hero {
     margin-top: 0;
   }
   .hero .hero-secondary {
@@ -2826,4 +2826,70 @@ select {
 }
 .wallet-form > button {
   grid-column: 1;
+}
+/* Reserve the route while its module/data load, keeping the footer in place. */
+#main {
+  min-height: calc(100dvh - 72px);
+}
+.placeholder-breadcrumb {
+  width: 240px;
+  max-width: 70%;
+  height: 17px;
+  margin-bottom: 28px;
+  border-radius: 3px;
+}
+.detail-placeholder-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 570px) minmax(0, 1fr);
+  gap: 40px;
+}
+.detail-placeholder-gallery {
+  height: auto;
+  aspect-ratio: 570 / 446;
+  border-radius: 12px;
+}
+.detail-placeholder-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.placeholder-title {
+  width: 70%;
+  height: 32px;
+}
+.placeholder-price {
+  width: 130px;
+  height: 22px;
+}
+.placeholder-text {
+  height: 80px;
+}
+.placeholder-control {
+  height: 42px;
+}
+.placeholder-description {
+  height: 180px;
+  margin-top: 48px;
+}
+@media (max-width: 950px) {
+  .detail-placeholder-layout {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 700px) {
+  #main {
+    min-height: 100dvh;
+  }
+  .detail-placeholder-layout {
+    gap: 24px;
+  }
+  .detail-placeholder-gallery {
+    aspect-ratio: auto;
+    height: calc(100vw + 28px);
+  }
+  .detail-placeholder-copy {
+    padding: 22px 18px;
+    background: #291a15;
+    border-radius: 0 0 24px 24px;
+  }
 }

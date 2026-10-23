@@ -12,33 +12,55 @@ import {
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { isAxiosError } from "axios";
 import { Search } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { Breadcrumb } from "./components/breadcrumb";
-import { DetailGallery } from "./features/detail-gallery";
-import { RelatedNfts } from "./features/related-nfts";
 import { MarketplaceFooter } from "./features/marketplace";
 import {
   MarketplaceCatalog,
   CatalogSkeleton as Skeleton,
 } from "./features/catalog";
-import type { CatalogSearch, Nft } from "./domain";
-import { api, errorMessage, queryClient, sessionOptions } from "./lib/api";
+import type { CatalogSearch } from "./domain";
+import { errorMessage, queryClient, sessionOptions } from "./lib/api";
 import { Button } from "./components/ui/button";
+import { DetailSkeleton } from "./components/detail-skeleton";
 
-import {
-  AccountNavigation,
-  SessionGuard,
-  LoginPage,
-  PurchaseControls,
-  CartPage,
-  CheckoutPage,
-  OrderPage,
-  AccountPage,
-  WalletsPage,
-} from "./features/commerce";
+import { lazy, Suspense } from "react";
+import { AccountNavigation, SessionGuard } from "./features/session";
+const LoginPage = lazy(() =>
+  import("./features/commerce").then((module) => ({
+    default: module.LoginPage,
+  })),
+);
+const CartPage = lazy(() =>
+  import("./features/commerce").then((module) => ({
+    default: module.CartPage,
+  })),
+);
+const CheckoutPage = lazy(() =>
+  import("./features/commerce").then((module) => ({
+    default: module.CheckoutPage,
+  })),
+);
+const OrderPage = lazy(() =>
+  import("./features/commerce").then((module) => ({
+    default: module.OrderPage,
+  })),
+);
+const AccountPage = lazy(() =>
+  import("./features/commerce").then((module) => ({
+    default: module.AccountPage,
+  })),
+);
+const WalletsPage = lazy(() =>
+  import("./features/commerce").then((module) => ({
+    default: module.WalletsPage,
+  })),
+);
+const DetailContent = lazy(() => import("./features/detail-page"));
+function DetailPage() {
+  const { id } = detailRoute.useParams();
+  return <DetailContent id={id} />;
+}
 
 import { Realtime } from "./features/realtime";
-import { FavoriteButton } from "./features/collector";
 
 function Layout() {
   const path = useRouterState({ select: (state) => state.location.pathname });
@@ -89,8 +111,21 @@ function Layout() {
       </header>
       <SessionGuard />
       <Realtime />
-      <main id="main">
-        <Outlet />
+      <main
+        id="main"
+        className={
+          ["/", "/login", "/register"].includes(path)
+            ? "discovery-page"
+            : undefined
+        }
+      >
+        <Suspense
+          fallback={
+            path.startsWith("/nft/") ? <DetailSkeleton /> : <Skeleton />
+          }
+        >
+          <Outlet />
+        </Suspense>
       </main>
       <MarketplaceFooter />
     </>
@@ -106,83 +141,6 @@ function CatalogPage() {
         navigate({ search: (prev) => ({ ...prev, page: 1, ...patch }) })
       }
     />
-  );
-}
-function DetailPage() {
-  const { id } = detailRoute.useParams();
-  const query = useQuery({
-    queryKey: ["nft", id],
-    queryFn: async ({ signal }) =>
-      (await api.get<Nft>(`/nfts/${encodeURIComponent(id)}`, { signal })).data,
-    retry: false,
-  });
-  if (query.isPending) return <Skeleton />;
-  if (query.isError)
-    return (
-      <div className="empty" role="alert">
-        <h1>NFT indisponível</h1>
-        <p>O item não existe ou não foi possível consultá-lo.</p>
-        <Button onClick={() => void query.refetch()}>Tentar novamente</Button>
-        <p>
-          <Link
-            to="/"
-            search={{ q: "", category: "", sort: "recent", page: 1 }}
-          >
-            Voltar ao catálogo
-          </Link>
-        </p>
-      </div>
-    );
-  const n = query.data;
-  return (
-    <section className="nft-page">
-      <Breadcrumb current={n.name} />
-      <div className="detail">
-        <DetailGallery key={n.id} nft={n} />
-        <div>
-          <p className="eyebrow">{n.category}</p>
-          <h1>{n.name}</h1>
-          <h2>{n.price} ETH</h2>
-          <p>Criado por {n.creator}</p>
-          <p className="nft-intro">
-            Uma peça da coleção Kurio Editions. Explore seus detalhes e escolha
-            uma edição para a sua coleção.
-          </p>
-          <p>{n.stock} edições disponíveis</p>
-          <PurchaseControls
-            nft={n}
-            favorite={<FavoriteButton id={n.id} name={n.name} />}
-          />
-        </div>
-      </div>
-      <div className="nft-description">
-        <h2>Detalhes da obra</h2>
-        <p>
-          Arte digital da coleção Kurio, disponível em edições standard e
-          limited. Preços, disponibilidade e compras fazem parte de uma
-          experiência simulada.
-        </p>
-        <dl>
-          <div>
-            <dt>ID do token</dt>
-            <dd>{n.id}</dd>
-          </div>
-          <div>
-            <dt>Criador</dt>
-            <dd>{n.creator}</dd>
-          </div>
-          <div>
-            <dt>Rede</dt>
-            <dd>Ethereum (simulada)</dd>
-          </div>
-          <div>
-            <dt>Edições disponíveis</dt>
-            <dd>{n.stock}</dd>
-          </div>
-        </dl>
-      </div>
-      <RelatedNfts exclude={[n.id]} />
-    </section>
   );
 }
 function RouteFailure({ error }: ErrorComponentProps) {
